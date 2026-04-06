@@ -26,29 +26,48 @@ const weekRangeLabel = (startDate, endDate) => {
   return `KW${startWeek} - KW${endWeek}`;
 };
 
-export default function GanttChart({ sites, dense = false, displayMonths = 3, referenceDate }) {
+const parseResolution = (value = '1920x1080') => {
+  const [width, height] = value.split('x').map((part) => Number(part));
+  if (!width || !height) return { width: 1920, height: 1080 };
+  return { width, height };
+};
+
+export default function GanttChart({ sites, dense = false, displayMonths = 3, referenceDate, tvResolution = '1920x1080', tvPageSize = 8 }) {
   const { start, end } = nextMonthsRange(displayMonths, referenceDate);
   const totalDays = end.diff(start, 'day') + 1;
   const ticks = weekTicks(start, end);
-  const scaleFactor = Math.min(1, 3 / Math.max(3, displayMonths));
-  const siteColumnWidth = Math.round((dense ? 260 : 320) * scaleFactor);
-  const rowHeight = Math.max(48, Math.round(64 * scaleFactor));
-  const periodHeight = Math.max(24, Math.round(32 * scaleFactor));
-  const timelineHeaderHeight = Math.max(28, Math.round(32 * scaleFactor));
+  const resolution = parseResolution(tvResolution);
+  const monthScale = Math.min(1, 3 / Math.max(3, displayMonths));
+  const resolutionScale = Math.min(1, resolution.width / 1920, resolution.height / 1080);
+  const densityScale = Math.min(1, 8 / Math.max(8, tvPageSize));
+  const scaleFactor = monthScale * resolutionScale * densityScale;
+  const timelineHeaderHeight = Math.max(24, Math.round(30 * scaleFactor));
+  const expectedRows = Math.max(1, Math.max(tvPageSize, sites.length));
+  const availableHeight = Math.max(280, resolution.height - 260);
+  const adaptiveRowHeight = Math.floor((availableHeight - timelineHeaderHeight - expectedRows * 2) / expectedRows);
+  const rowHeight = Math.max(34, Math.min(Math.round(64 * scaleFactor), adaptiveRowHeight));
+  const periodHeight = Math.max(16, Math.round(rowHeight * 0.55));
+  const siteColumnWidth = Math.max(
+    140,
+    Math.min(
+      Math.round((dense ? 260 : 320) * scaleFactor),
+      Math.round(resolution.width * 0.32),
+    ),
+  );
   const visibleTickInterval = displayMonths >= 6 ? 3 : displayMonths >= 4 ? 2 : 1;
 
   return (
-    <div className="rounded-2xl border border-slate-800 bg-slate-900/70 p-4 shadow-xl">
-      <div className="mb-4 flex items-center justify-between">
+    <div className="h-full overflow-hidden rounded-2xl border border-slate-800 bg-slate-900/70 p-4 shadow-xl">
+      <div className="mb-4 flex shrink-0 items-center justify-between">
         <h2 className="text-lg font-semibold">Gantt-Übersicht (nächste {displayMonths} Monate)</h2>
         <span className="text-sm text-slate-400">
           {start.format('DD.MM.YYYY')} – {end.format('DD.MM.YYYY')}
         </span>
       </div>
 
-      <div className="relative overflow-x-hidden">
+      <div className="relative h-full overflow-hidden">
         <div
-          className="grid gap-2"
+          className="grid gap-1.5"
           style={{ gridTemplateColumns: `${siteColumnWidth}px minmax(0, 1fr)` }}
         >
           <div className="text-xs uppercase tracking-wide text-slate-400">Baustelle</div>
@@ -67,8 +86,8 @@ export default function GanttChart({ sites, dense = false, displayMonths = 3, re
 
           {sites.map((site) => (
             <Fragment key={site.id}>
-              <div key={`${site.id}-meta`} className="rounded-lg bg-slate-950/40 p-3">
-                <p className="font-semibold">{site.name}</p>
+              <div key={`${site.id}-meta`} className="rounded-lg bg-slate-950/40 p-2">
+                <p className="truncate font-semibold">{site.name}</p>
                 <p className="text-xs text-slate-400">
                   {site.customer} · {site.location}
                 </p>

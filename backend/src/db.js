@@ -43,13 +43,20 @@ db.exec(`
     display_months INTEGER NOT NULL DEFAULT 3,
     tv_page_size INTEGER NOT NULL DEFAULT 8,
     tv_page_switch_seconds INTEGER NOT NULL DEFAULT 60,
-    manual_current_date TEXT
+    manual_current_date TEXT,
+    tv_resolution TEXT NOT NULL DEFAULT '1920x1080'
   );
 `);
 
+const appSettingsColumns = db.prepare('PRAGMA table_info(app_settings)').all();
+const hasTvResolution = appSettingsColumns.some((column) => column.name === 'tv_resolution');
+if (!hasTvResolution) {
+  db.exec("ALTER TABLE app_settings ADD COLUMN tv_resolution TEXT NOT NULL DEFAULT '1920x1080';");
+}
+
 db.prepare(`
-  INSERT INTO app_settings (id, display_months, tv_page_size, tv_page_switch_seconds, manual_current_date)
-  VALUES (1, 3, 8, 60, NULL)
+  INSERT INTO app_settings (id, display_months, tv_page_size, tv_page_switch_seconds, manual_current_date, tv_resolution)
+  VALUES (1, 3, 8, 60, NULL, '1920x1080')
   ON CONFLICT(id) DO NOTHING
 `).run();
 
