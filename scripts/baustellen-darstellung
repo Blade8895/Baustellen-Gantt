@@ -1,0 +1,77 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+PID_FILE="$ROOT_DIR/.pids"
+LOG_DIR="$ROOT_DIR/logs"
+
+mkdir -p "$LOG_DIR"
+
+start() {
+  if [[ -f "$PID_FILE" ]]; then
+    echo "System läuft bereits (PID-Datei vorhanden)."
+    status
+    return
+  fi
+
+  (cd "$ROOT_DIR" && npm run dev -w backend > "$LOG_DIR/backend.log" 2>&1 & echo $! > "$LOG_DIR/backend.pid")
+  (cd "$ROOT_DIR" && npm run dev -w frontend > "$LOG_DIR/frontend.log" 2>&1 & echo $! > "$LOG_DIR/frontend.pid")
+
+  backend_pid=$(cat "$LOG_DIR/backend.pid")
+  frontend_pid=$(cat "$LOG_DIR/frontend.pid")
+
+  cat > "$PID_FILE" <<EOP
+BACKEND_PID=$backend_pid
+FRONTEND_PID=$frontend_pid
+EOP
+
+  echo "Baustellen-Darstellung gestartet."
+  status
+}
+
+stop() {
+  if [[ ! -f "$PID_FILE" ]]; then
+    echo "Kein laufendes System gefunden."
+    return
+  fi
+
+  source "$PID_FILE"
+  kill "$BACKEND_PID" "$FRONTEND_PID" 2>/dev/null || true
+  rm -f "$PID_FILE" "$LOG_DIR/backend.pid" "$LOG_DIR/frontend.pid"
+  echo "Baustellen-Darstellung gestoppt."
+}
+
+status() {
+  if [[ ! -f "$PID_FILE" ]]; then
+    echo "Status: gestoppt"
+    return
+  fi
+
+  source "$PID_FILE"
+  if kill -0 "$BACKEND_PID" 2>/dev/null && kill -0 "$FRONTEND_PID" 2>/dev/null; then
+    echo "Status: läuft"
+    echo "Backend PID: $BACKEND_PID"
+    echo "Frontend PID: $FRONTEND_PID"
+    echo "User-Ansicht: http://$(hostname -I | awk '{print $1}'):5173"
+    echo "TV-Ansicht:   http://$(hostname -I | awk '{print $1}'):5173/tv"
+  else
+    echo "Status: inkonsistent (PID-Datei vorhanden, Prozesse fehlen)"
+  fi
+}
+
+restart() {
+  stop
+  sleep 1
+  start
+}
+
+case "${1:-}" in
+  start) start ;;
+  stop) stop ;;
+  restart) restart ;;
+  status) status ;;
+  *)
+    echo "Verwendung: $(basename "$0") {start|stop|restart|status}"
+    exit 1
+    ;;
+esac
