@@ -1,42 +1,123 @@
+import dayjs from 'dayjs';
 import { db } from './db.js';
 
-const mapRow = (row) => ({
+const defaultSettings = {
+  displayMonths: 3,
+  tvPageSize: 8,
+  tvPageSwitchSeconds: 60,
+  manualCurrentDate: null,
+};
+
+const mapPeriodRow = (row) => ({
   id: row.id,
-  name: row.name,
-  customer: row.customer,
-  location: row.location,
   startDate: row.start_date,
   endDate: row.end_date,
-  status: row.status,
-  description: row.description,
-  color: row.color,
-  category: row.category,
-  createdAt: row.created_at,
-  updatedAt: row.updated_at,
 });
 
+const mapSiteRow = (row, periods = []) => {
+  const sortedPeriods = periods.sort((a, b) => a.startDate.localeCompare(b.startDate));
+  const effectivePeriods = sortedPeriods.length > 0 ? sortedPeriods : [{ startDate: row.start_date, endDate: row.end_date }];
+
+  return {
+    id: row.id,
+    name: row.name,
+    customer: row.customer,
+    location: row.location,
+    startDate: row.start_date,
+    endDate: row.end_date,
+    status: row.status,
+    description: row.description,
+    color: row.color,
+    category: row.category,
+    periods: effectivePeriods,
+    createdAt: row.created_at,
+    updatedAt: row.updated_at,
+  };
+};
+
+const withComputedStatus = (site, referenceDate) => ({
+  ...site,
+  status: computeAutoStatus(site.periods, referenceDate),
+});
+
+const computeAutoStatus = (periods, referenceDate) => {
+  if (!periods?.length) return 'geplant';
+
+  const ref = dayjs(referenceDate).startOf('day');
+  const sorted = [...periods].sort((a, b) => a.startDate.localeCompare(b.startDate));
+  const firstStart = dayjs(sorted[0].startDate).startOf('day');
+  const lastEnd = dayjs(sorted.at(-1).endDate).endOf('day');
+
+  if (ref.isBefore(firstStart)) return 'geplant';
+  if (ref.isAfter(lastEnd)) return 'fertig';
+
+  const isActive = sorted.some((period) => {
+    const start = dayjs(period.startDate).startOf('day');
+    const end = dayjs(period.endDate).endOf('day');
+    return (ref.isAfter(start) || ref.isSame(start)) && (ref.isBefore(end) || ref.isSame(end));
+  });
+
+  return isActive ? 'in_arbeit' : 'pausiert';
+};
+
+const getReferenceDate = () => {
+  const stmt = db.prepare('SELECT manual_current_date as manualCurrentDate FROM app_settings WHERE id = 1');
+  const row = stmt.get();
+  return row?.manualCurrentDate || dayjs().format('YYYY-MM-DD');
+};
+
+const getPeriodsBySiteId = (siteId) => {
+  const stmt = db.prepare('SELECT * FROM site_periods WHERE site_id = ? ORDER BY start_date ASC, id ASC');
+  return stmt.all(siteId).map(mapPeriodRow);
+};
+
+const replacePeriods = (siteId, periods = []) => {
+  db.prepare('DELETE FROM site_periods WHERE site_id = ?').run(siteId);
+  const insert = db.prepare('INSERT INTO site_periods (site_id, start_date, end_date) VALUES (?, ?, ?)');
+  for (const period of periods) {
+    insert.run(siteId, period.startDate, period.endDate);
+  }
+};
+
 export const getAllSites = () => {
-  const stmt = db.prepare(`SELECT * FROM construction_sites ORDER BY start_date ASC, id ASC`);
-  return stmt.all().map(mapRow);
+  const rows = db.prepare('SELECT * FROM construction_sites ORDER BY start_date ASC, id ASC').all();
+  const referenceDate = getReferenceDate();
+  return rows
+    .map((row) => mapSiteRow(row, getPeriodsBySiteId(row.id)))
+    .map((site) => withComputedStatus(site, referenceDate));
 };
 
 export const getSiteById = (id) => {
-  const stmt = db.prepare(`SELECT * FROM construction_sites WHERE id = ?`);
-  const row = stmt.get(id);
-  return row ? mapRow(row) : null;
+  const row = db.prepare('SELECT * FROM construction_sites WHERE id = ?').get(id);
+  if (!row) return null;
+  const referenceDate = getReferenceDate();
+  return withComputedStatus(mapSiteRow(row, getPeriodsBySiteId(id)), referenceDate);
 };
 
 export const createSite = (payload) => {
+  const periods = payload.periods?.length
+    ? payload.periods
+    : [{ startDate: payload.startDate, endDate: payload.endDate }];
+  const startDate = periods[0].startDate;
+  const endDate = periods[periods.length - 1].endDate;
+
   const stmt = db.prepare(`
     INSERT INTO construction_sites (name, customer, location, start_date, end_date, status, description, color, category)
     VALUES (@name, @customer, @location, @startDate, @endDate, @status, @description, @color, @category)
   `);
 
-  const result = stmt.run(payload);
+  const result = stmt.run({ ...payload, startDate, endDate, status: 'geplant' });
+  replacePeriods(result.lastInsertRowid, periods);
   return getSiteById(result.lastInsertRowid);
 };
 
 export const updateSite = (id, payload) => {
+  const periods = payload.periods?.length
+    ? payload.periods
+    : [{ startDate: payload.startDate, endDate: payload.endDate }];
+  const startDate = periods[0].startDate;
+  const endDate = periods[periods.length - 1].endDate;
+
   const stmt = db.prepare(`
     UPDATE construction_sites
     SET name=@name,
@@ -51,12 +132,40 @@ export const updateSite = (id, payload) => {
     WHERE id=@id
   `);
 
-  stmt.run({ id, ...payload });
+  stmt.run({ id, ...payload, startDate, endDate, status: 'geplant' });
+  replacePeriods(id, periods);
   return getSiteById(id);
 };
 
 export const deleteSite = (id) => {
-  const stmt = db.prepare(`DELETE FROM construction_sites WHERE id = ?`);
+  const stmt = db.prepare('DELETE FROM construction_sites WHERE id = ?');
   const result = stmt.run(id);
   return result.changes > 0;
+};
+
+export const getSettings = () => {
+  const row = db.prepare('SELECT * FROM app_settings WHERE id = 1').get();
+  if (!row) return defaultSettings;
+
+  return {
+    displayMonths: row.display_months,
+    tvPageSize: row.tv_page_size,
+    tvPageSwitchSeconds: row.tv_page_switch_seconds,
+    manualCurrentDate: row.manual_current_date,
+  };
+};
+
+export const updateSettings = (payload) => {
+  const merged = { ...getSettings(), ...payload };
+  const stmt = db.prepare(`
+    UPDATE app_settings
+    SET display_months=@displayMonths,
+        tv_page_size=@tvPageSize,
+        tv_page_switch_seconds=@tvPageSwitchSeconds,
+        manual_current_date=@manualCurrentDate
+    WHERE id = 1
+  `);
+
+  stmt.run(merged);
+  return getSettings();
 };

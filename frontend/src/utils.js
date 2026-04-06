@@ -14,8 +14,8 @@ export const statusBadgeClass = {
   fertig: 'bg-emerald-500/20 text-emerald-200',
 };
 
-export const nextMonthsRange = (months = 3) => {
-  const start = dayjs().startOf('day');
+export const nextMonthsRange = (months = 3, referenceDate) => {
+  const start = dayjs(referenceDate || undefined).startOf('day');
   const end = start.add(months, 'month').endOf('day');
   return { start, end };
 };
@@ -33,3 +33,28 @@ export const clampDays = (startDate, endDate, rangeStart, rangeEnd) => {
     totalDays,
   };
 };
+
+const getUpcomingDate = (site, referenceDate) => {
+  const ref = dayjs(referenceDate).startOf('day');
+  const periods = [...(site.periods || [])].sort((a, b) => a.startDate.localeCompare(b.startDate));
+
+  for (const period of periods) {
+    const start = dayjs(period.startDate).startOf('day');
+    const end = dayjs(period.endDate).endOf('day');
+    if (ref.isBefore(start)) return start;
+    if ((ref.isAfter(start) || ref.isSame(start)) && (ref.isBefore(end) || ref.isSame(end))) return ref;
+  }
+
+  const fallbackEnd = periods.at(-1)?.endDate || site.endDate;
+  return dayjs(fallbackEnd).add(100, 'year');
+};
+
+export const sortSitesByUpcoming = (sites, referenceDate) =>
+  [...sites].sort((a, b) => {
+    const left = getUpcomingDate(a, referenceDate);
+    const right = getUpcomingDate(b, referenceDate);
+    if (left.isSame(right, 'day')) {
+      return (a.name || '').localeCompare(b.name || '', 'de');
+    }
+    return left.isBefore(right) ? -1 : 1;
+  });

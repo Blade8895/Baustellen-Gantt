@@ -1,42 +1,77 @@
-import { useMemo, useState } from 'react';
-import { statusLabel } from '../utils.js';
+import { useEffect, useMemo, useState } from 'react';
 
-const initialForm = {
+const buildInitialForm = () => ({
   name: '',
   customer: '',
   location: '',
-  startDate: '',
-  endDate: '',
-  status: 'geplant',
   description: '',
   color: '#22d3ee',
   category: 'Allgemein',
-};
+  periods: [{ startDate: '', endDate: '' }],
+});
 
 export default function SiteForm({ selected, onSave, onCancel }) {
-  const [form, setForm] = useState(selected || initialForm);
+  const [form, setForm] = useState(buildInitialForm());
   const [error, setError] = useState('');
 
   const title = useMemo(() => (selected?.id ? 'Baustelle bearbeiten' : 'Baustelle anlegen'), [selected]);
+
+  useEffect(() => {
+    if (!selected) {
+      setForm(buildInitialForm());
+      return;
+    }
+
+    setForm({
+      name: selected.name || '',
+      customer: selected.customer || '',
+      location: selected.location || '',
+      description: selected.description || '',
+      color: selected.color || '#22d3ee',
+      category: selected.category || 'Allgemein',
+      periods: selected.periods?.length ? selected.periods : [{ startDate: selected.startDate, endDate: selected.endDate }],
+    });
+  }, [selected]);
 
   const handleChange = (event) => {
     const { name, value } = event.target;
     setForm((prev) => ({ ...prev, [name]: value }));
   };
 
+  const updatePeriod = (index, field, value) => {
+    setForm((prev) => ({
+      ...prev,
+      periods: prev.periods.map((period, i) => (i === index ? { ...period, [field]: value } : period)),
+    }));
+  };
+
+  const addPeriod = () => {
+    setForm((prev) => ({ ...prev, periods: [...prev.periods, { startDate: '', endDate: '' }] }));
+  };
+
+  const removePeriod = (index) => {
+    setForm((prev) => ({
+      ...prev,
+      periods: prev.periods.filter((_period, i) => i !== index),
+    }));
+  };
+
   const handleSubmit = async (event) => {
     event.preventDefault();
-    if (!form.name || !form.customer || !form.location || !form.startDate || !form.endDate) {
+    if (!form.name || !form.customer || !form.location || form.periods.length === 0) {
       setError('Bitte alle Pflichtfelder ausfüllen.');
       return;
     }
-    if (form.startDate > form.endDate) {
-      setError('Startdatum darf nicht nach dem Enddatum liegen.');
+
+    const hasInvalidPeriod = form.periods.some((period) => !period.startDate || !period.endDate || period.startDate > period.endDate);
+    if (hasInvalidPeriod) {
+      setError('Bitte gültige Zeiträume eintragen (Start <= Ende).');
       return;
     }
+
     setError('');
-    await onSave(form);
-    if (!selected?.id) setForm(initialForm);
+    await onSave({ ...form, periods: [...form.periods].sort((a, b) => a.startDate.localeCompare(b.startDate)) });
+    if (!selected?.id) setForm(buildInitialForm());
   };
 
   return (
@@ -64,26 +99,46 @@ export default function SiteForm({ selected, onSave, onCancel }) {
         ))}
       </div>
 
-      <div className="grid gap-3 md:grid-cols-2">
-        <label className="text-sm">
-          <span className="mb-1 block text-slate-300">Startdatum</span>
-          <input type="date" required name="startDate" value={form.startDate} onChange={handleChange} className="w-full rounded-md border border-slate-700 bg-slate-950 px-3 py-2" />
-        </label>
-        <label className="text-sm">
-          <span className="mb-1 block text-slate-300">Enddatum</span>
-          <input type="date" required name="endDate" value={form.endDate} onChange={handleChange} className="w-full rounded-md border border-slate-700 bg-slate-950 px-3 py-2" />
-        </label>
+      <div className="space-y-2 rounded-md border border-slate-800 p-3">
+        <p className="text-sm text-slate-300">Zeiträume (mehrere möglich)</p>
+        {form.periods.map((period, index) => (
+          <div key={`period-${index}`} className="grid gap-3 md:grid-cols-[1fr_1fr_auto]">
+            <label className="text-sm">
+              <span className="mb-1 block text-slate-300">Startdatum</span>
+              <input
+                type="date"
+                required
+                value={period.startDate}
+                onChange={(event) => updatePeriod(index, 'startDate', event.target.value)}
+                className="w-full rounded-md border border-slate-700 bg-slate-950 px-3 py-2"
+              />
+            </label>
+            <label className="text-sm">
+              <span className="mb-1 block text-slate-300">Enddatum</span>
+              <input
+                type="date"
+                required
+                value={period.endDate}
+                onChange={(event) => updatePeriod(index, 'endDate', event.target.value)}
+                className="w-full rounded-md border border-slate-700 bg-slate-950 px-3 py-2"
+              />
+            </label>
+            <button
+              type="button"
+              className="self-end rounded-md border border-rose-800 px-3 py-2 text-sm text-rose-300 hover:bg-rose-900/40"
+              onClick={() => removePeriod(index)}
+              disabled={form.periods.length === 1}
+            >
+              Entfernen
+            </button>
+          </div>
+        ))}
+        <button type="button" onClick={addPeriod} className="rounded-md border border-slate-700 px-3 py-2 text-sm hover:bg-slate-800">
+          Zeitraum hinzufügen
+        </button>
       </div>
 
       <div className="grid gap-3 md:grid-cols-2">
-        <label className="text-sm">
-          <span className="mb-1 block text-slate-300">Status</span>
-          <select name="status" value={form.status} onChange={handleChange} className="w-full rounded-md border border-slate-700 bg-slate-950 px-3 py-2">
-            {Object.entries(statusLabel).map(([value, label]) => (
-              <option key={value} value={value}>{label}</option>
-            ))}
-          </select>
-        </label>
         <label className="text-sm">
           <span className="mb-1 block text-slate-300">Farbe</span>
           <input type="color" name="color" value={form.color} onChange={handleChange} className="h-10 w-full rounded-md border border-slate-700 bg-slate-950 px-2" />
