@@ -11,7 +11,7 @@ export default function SiteTable({ sites, onEdit, onDelete }) {
             <tr className="border-b border-slate-800 text-left text-slate-400">
               <th className="pb-2">Name</th>
               <th className="pb-2">Kunde</th>
-              <th className="pb-2">Zeitraum</th>
+              <th className="pb-2">Zeiträume</th>
               <th className="pb-2">Status</th>
               <th className="pb-2">Aktionen</th>
             </tr>
@@ -25,7 +25,13 @@ export default function SiteTable({ sites, onEdit, onDelete }) {
                 </td>
                 <td className="py-3">{site.customer}</td>
                 <td className="py-3">
-                  {dayjs(site.startDate).format('DD.MM.YYYY')} – {dayjs(site.endDate).format('DD.MM.YYYY')}
+                  <div className="space-y-1">
+                    {(site.periods || []).map((period, index) => (
+                      <p key={`${site.id}-period-${index}`}>
+                        {dayjs(period.startDate).format('DD.MM.YYYY')} – {dayjs(period.endDate).format('DD.MM.YYYY')}
+                      </p>
+                    ))}
+                  </div>
                 </td>
                 <td className="py-3">
                   <span className={`rounded px-2 py-0.5 text-xs ${statusBadgeClass[site.status]}`}>{statusLabel[site.status]}</span>

@@ -3,8 +3,16 @@ import express from 'express';
 import cors from 'cors';
 import { Server } from 'socket.io';
 import { config } from './config.js';
-import { siteSchema } from './validation.js';
-import { createSite, deleteSite, getAllSites, getSiteById, updateSite } from './repository.js';
+import { settingsSchema, siteSchema } from './validation.js';
+import {
+  createSite,
+  deleteSite,
+  getAllSites,
+  getSettings,
+  getSiteById,
+  updateSettings,
+  updateSite,
+} from './repository.js';
 
 const app = express();
 app.use(cors({ origin: config.corsOrigin === '*' ? true : config.corsOrigin }));
@@ -57,6 +65,22 @@ app.delete('/api/sites/:id', (req, res) => {
   return res.status(204).send();
 });
 
+app.get('/api/settings', (_req, res) => {
+  res.json(getSettings());
+});
+
+app.put('/api/settings', (req, res) => {
+  const parsed = settingsSchema.safeParse(req.body);
+  if (!parsed.success) {
+    return res.status(400).json({ message: 'Validierungsfehler', errors: parsed.error.flatten() });
+  }
+
+  const updated = updateSettings(parsed.data);
+  io.emit('settings:changed', updated);
+  io.emit('sites:changed', { action: 'status-refresh' });
+  return res.json(updated);
+});
+
 app.use((err, _req, res, _next) => {
   console.error(err);
   res.status(500).json({ message: 'Unerwarteter Serverfehler.' });
@@ -71,6 +95,7 @@ const io = new Server(server, {
 
 io.on('connection', (socket) => {
   socket.emit('sites:sync', getAllSites());
+  socket.emit('settings:sync', getSettings());
 });
 
 server.listen(config.port, config.host, () => {
