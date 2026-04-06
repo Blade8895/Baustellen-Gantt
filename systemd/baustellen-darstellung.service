@@ -1,0 +1,16 @@
+[Unit]
+Description=Baustellen Gantt Full-Stack Service
+After=network.target
+
+[Service]
+Type=forking
+WorkingDirectory=/opt/baustellen-gantt
+ExecStart=/opt/baustellen-gantt/scripts/baustellen-darstellung start
+ExecStop=/opt/baustellen-gantt/scripts/baustellen-darstellung stop
+ExecReload=/opt/baustellen-gantt/scripts/baustellen-darstellung restart
+Restart=on-failure
+User=pi
+Environment=NODE_ENV=production
+
+[Install]
+WantedBy=multi-user.target
