@@ -4,9 +4,7 @@ const buildInitialForm = () => ({
   name: '',
   customer: '',
   location: '',
-  description: '',
   color: '#22d3ee',
-  category: 'Allgemein',
   periods: [{ startDate: '', endDate: '' }],
 });
 
@@ -26,9 +24,7 @@ export default function SiteForm({ selected, onSave, onCancel }) {
       name: selected.name || '',
       customer: selected.customer || '',
       location: selected.location || '',
-      description: selected.description || '',
       color: selected.color || '#22d3ee',
-      category: selected.category || 'Allgemein',
       periods: selected.periods?.length ? selected.periods : [{ startDate: selected.startDate, endDate: selected.endDate }],
     });
   }, [selected]);
@@ -84,12 +80,11 @@ export default function SiteForm({ selected, onSave, onCancel }) {
           ['name', 'Baustellenname'],
           ['customer', 'Kunde / Auftraggeber'],
           ['location', 'Ort'],
-          ['category', 'Kategorie'],
         ].map(([name, label]) => (
           <label key={name} className="text-sm">
             <span className="mb-1 block text-slate-300">{label}</span>
             <input
-              required={name !== 'category'}
+              required
               name={name}
               value={form[name]}
               onChange={handleChange}
@@ -144,11 +139,6 @@ export default function SiteForm({ selected, onSave, onCancel }) {
           <input type="color" name="color" value={form.color} onChange={handleChange} className="h-10 w-full rounded-md border border-slate-700 bg-slate-950 px-2" />
         </label>
       </div>
-
-      <label className="text-sm">
-        <span className="mb-1 block text-slate-300">Beschreibung / Notiz</span>
-        <textarea name="description" value={form.description} onChange={handleChange} className="min-h-24 w-full rounded-md border border-slate-700 bg-slate-950 px-3 py-2" />
-      </label>
 
       <div className="flex gap-2">
         <button type="submit" className="rounded-md bg-cyan-500 px-4 py-2 font-medium text-slate-950 hover:bg-cyan-400">Speichern</button>
