@@ -112,7 +112,7 @@ function SettingsForm({ settings, onSave }) {
 
 function UserView() {
   const { sites, loading, reload } = useSites();
-  const { settings, saveSettings } = useSettings();
+  const { settings } = useSettings();
   const [selected, setSelected] = useState(null);
 
   const saveSite = async (payload) => {
@@ -147,7 +147,6 @@ function UserView() {
         </div>
       </header>
       <SiteForm selected={selected} onSave={saveSite} onCancel={() => setSelected(null)} />
-      <SettingsForm settings={settings} onSave={saveSettings} />
       {loading ? <p>Lade Baustellen...</p> : <SiteTable sites={sorted} onEdit={setSelected} onDelete={deleteSite} />}
     </div>
   );
