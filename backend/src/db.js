@@ -44,7 +44,11 @@ db.exec(`
     tv_page_size INTEGER NOT NULL DEFAULT 8,
     tv_page_switch_seconds INTEGER NOT NULL DEFAULT 60,
     manual_current_date TEXT,
-    tv_resolution TEXT NOT NULL DEFAULT '1920x1080'
+    tv_resolution TEXT NOT NULL DEFAULT '1920x1080',
+    tv_title TEXT NOT NULL DEFAULT 'Baustellen Übersicht',
+    tv_subtitle TEXT NOT NULL DEFAULT 'Live vom lokalen System · Nur Anzeige',
+    tv_show_page_indicator INTEGER NOT NULL DEFAULT 1,
+    tv_logo_data_url TEXT
   );
 `);
 
@@ -53,10 +57,37 @@ const hasTvResolution = appSettingsColumns.some((column) => column.name === 'tv_
 if (!hasTvResolution) {
   db.exec("ALTER TABLE app_settings ADD COLUMN tv_resolution TEXT NOT NULL DEFAULT '1920x1080';");
 }
+const hasTvTitle = appSettingsColumns.some((column) => column.name === 'tv_title');
+if (!hasTvTitle) {
+  db.exec("ALTER TABLE app_settings ADD COLUMN tv_title TEXT NOT NULL DEFAULT 'Baustellen Übersicht';");
+}
+const hasTvSubtitle = appSettingsColumns.some((column) => column.name === 'tv_subtitle');
+if (!hasTvSubtitle) {
+  db.exec("ALTER TABLE app_settings ADD COLUMN tv_subtitle TEXT NOT NULL DEFAULT 'Live vom lokalen System · Nur Anzeige';");
+}
+const hasTvShowPageIndicator = appSettingsColumns.some((column) => column.name === 'tv_show_page_indicator');
+if (!hasTvShowPageIndicator) {
+  db.exec('ALTER TABLE app_settings ADD COLUMN tv_show_page_indicator INTEGER NOT NULL DEFAULT 1;');
+}
+const hasTvLogoDataUrl = appSettingsColumns.some((column) => column.name === 'tv_logo_data_url');
+if (!hasTvLogoDataUrl) {
+  db.exec('ALTER TABLE app_settings ADD COLUMN tv_logo_data_url TEXT;');
+}
 
 db.prepare(`
-  INSERT INTO app_settings (id, display_months, tv_page_size, tv_page_switch_seconds, manual_current_date, tv_resolution)
-  VALUES (1, 3, 8, 60, NULL, '1920x1080')
+  INSERT INTO app_settings (
+    id,
+    display_months,
+    tv_page_size,
+    tv_page_switch_seconds,
+    manual_current_date,
+    tv_resolution,
+    tv_title,
+    tv_subtitle,
+    tv_show_page_indicator,
+    tv_logo_data_url
+  )
+  VALUES (1, 3, 8, 60, NULL, '1920x1080', 'Baustellen Übersicht', 'Live vom lokalen System · Nur Anzeige', 1, NULL)
   ON CONFLICT(id) DO NOTHING
 `).run();
 
