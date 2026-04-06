@@ -26,33 +26,59 @@ const weekRangeLabel = (startDate, endDate) => {
   return `KW${startWeek} - KW${endWeek}`;
 };
 
-export default function GanttChart({ sites, dense = false, displayMonths = 3, referenceDate }) {
+const parseResolution = (value = '1920x1080') => {
+  const [width, height] = value.split('x').map((part) => Number(part));
+  if (!width || !height) return { width: 1920, height: 1080 };
+  return { width, height };
+};
+
+export default function GanttChart({ sites, dense = false, displayMonths = 3, referenceDate, tvResolution = '1920x1080', tvPageSize = 8 }) {
   const { start, end } = nextMonthsRange(displayMonths, referenceDate);
   const totalDays = end.diff(start, 'day') + 1;
   const ticks = weekTicks(start, end);
+  const resolution = parseResolution(tvResolution);
+  const monthScale = Math.min(1, 3 / Math.max(3, displayMonths));
+  const resolutionScale = Math.min(1, resolution.width / 1920, resolution.height / 1080);
+  const densityScale = Math.min(1, 8 / Math.max(8, tvPageSize));
+  const scaleFactor = monthScale * resolutionScale * densityScale;
+  const timelineHeaderHeight = Math.max(24, Math.round(30 * scaleFactor));
+  const expectedRows = Math.max(1, Math.max(tvPageSize, sites.length));
+  const availableHeight = Math.max(280, resolution.height - 260);
+  const adaptiveRowHeight = Math.floor((availableHeight - timelineHeaderHeight - expectedRows * 2) / expectedRows);
+  const rowHeight = Math.max(34, Math.min(Math.round(64 * scaleFactor), adaptiveRowHeight));
+  const periodHeight = Math.max(16, Math.round(rowHeight * 0.55));
+  const siteColumnWidth = Math.max(
+    140,
+    Math.min(
+      Math.round((dense ? 260 : 320) * scaleFactor),
+      Math.round(resolution.width * 0.32),
+    ),
+  );
+  const visibleTickInterval = displayMonths >= 6 ? 3 : displayMonths >= 4 ? 2 : 1;
 
   return (
-    <div className="rounded-2xl border border-slate-800 bg-slate-900/70 p-4 shadow-xl">
-      <div className="mb-4 flex items-center justify-between">
+    <div className="h-full overflow-hidden rounded-2xl border border-slate-800 bg-slate-900/70 p-4 shadow-xl">
+      <div className="mb-4 flex shrink-0 items-center justify-between">
         <h2 className="text-lg font-semibold">Gantt-Übersicht (nächste {displayMonths} Monate)</h2>
         <span className="text-sm text-slate-400">
           {start.format('DD.MM.YYYY')} – {end.format('DD.MM.YYYY')}
         </span>
       </div>
 
-      <div className="relative overflow-x-auto">
+      <div className="relative h-full overflow-hidden">
         <div
-          className="grid min-w-[980px] gap-2"
-          style={{ gridTemplateColumns: dense ? '260px 1fr' : '320px 1fr' }}
+          className="grid gap-1.5"
+          style={{ gridTemplateColumns: `${siteColumnWidth}px minmax(0, 1fr)` }}
         >
           <div className="text-xs uppercase tracking-wide text-slate-400">Baustelle</div>
-          <div className="relative h-8 rounded bg-slate-950/50">
-            {ticks.map((tick) => {
+          <div className="relative rounded bg-slate-950/50" style={{ height: timelineHeaderHeight }}>
+            {ticks.map((tick, index) => {
               const left = `${(tick.diff(start, 'day') / totalDays) * 100}%`;
+              const isVisibleTick = index % visibleTickInterval === 0;
               return (
                 <div key={tick.toString()} className="absolute inset-y-0" style={{ left }}>
                   <div className="h-full border-l border-slate-700/80" />
-                  <span className="absolute top-0 ml-1 text-[10px] text-slate-400">KW{tick.isoWeek()}</span>
+                  {isVisibleTick && <span className="absolute top-0 ml-1 text-[10px] text-slate-400">KW{tick.isoWeek()}</span>}
                 </div>
               );
             })}
@@ -60,8 +86,8 @@ export default function GanttChart({ sites, dense = false, displayMonths = 3, re
 
           {sites.map((site) => (
             <Fragment key={site.id}>
-              <div key={`${site.id}-meta`} className="rounded-lg bg-slate-950/40 p-3">
-                <p className="font-semibold">{site.name}</p>
+              <div key={`${site.id}-meta`} className="rounded-lg bg-slate-950/40 p-2">
+                <p className="truncate font-semibold">{site.name}</p>
                 <p className="text-xs text-slate-400">
                   {site.customer} · {site.location}
                 </p>
@@ -69,7 +95,7 @@ export default function GanttChart({ sites, dense = false, displayMonths = 3, re
                   {statusLabel[site.status]}
                 </span>
               </div>
-              <div key={`${site.id}-bar`} className="relative flex h-16 items-center rounded-lg bg-slate-950/30">
+              <div key={`${site.id}-bar`} className="relative flex items-center rounded-lg bg-slate-950/30" style={{ height: rowHeight }}>
                 {ticks.map((tick) => {
                   const left = `${(tick.diff(start, 'day') / totalDays) * 100}%`;
                   return <div key={`${site.id}-tick-${tick.toString()}`} className="absolute inset-y-0 border-l border-slate-800/70" style={{ left }} />;
@@ -83,8 +109,8 @@ export default function GanttChart({ sites, dense = false, displayMonths = 3, re
                   return (
                     <div
                       key={`${site.id}-period-${index}`}
-                      className="absolute flex h-8 items-center rounded-md border border-white/10 px-2 text-xs font-medium text-white shadow-sm"
-                      style={{ left, width, backgroundColor: `${site.color}CC` }}
+                      className="absolute flex items-center rounded-md border border-white/10 px-2 text-xs font-medium text-white shadow-sm"
+                      style={{ height: periodHeight, left, width, backgroundColor: `${site.color}CC` }}
                       title={`${site.name}: ${dayjs(period.startDate).format('DD.MM.')} - ${dayjs(period.endDate).format('DD.MM.')}`}
                     >
                       <span className="truncate">{weekRangeLabel(period.startDate, period.endDate)}</span>

@@ -6,6 +6,7 @@ const defaultSettings = {
   tvPageSize: 8,
   tvPageSwitchSeconds: 60,
   manualCurrentDate: null,
+  tvResolution: '1920x1080',
 };
 
 const mapPeriodRow = (row) => ({
@@ -152,6 +153,7 @@ export const getSettings = () => {
     tvPageSize: row.tv_page_size,
     tvPageSwitchSeconds: row.tv_page_switch_seconds,
     manualCurrentDate: row.manual_current_date,
+    tvResolution: row.tv_resolution || '1920x1080',
   };
 };
 
@@ -162,7 +164,8 @@ export const updateSettings = (payload) => {
     SET display_months=@displayMonths,
         tv_page_size=@tvPageSize,
         tv_page_switch_seconds=@tvPageSwitchSeconds,
-        manual_current_date=@manualCurrentDate
+        manual_current_date=@manualCurrentDate,
+        tv_resolution=@tvResolution
     WHERE id = 1
   `);
 

@@ -37,6 +37,7 @@ function useSettings() {
     tvPageSize: 8,
     tvPageSwitchSeconds: 60,
     manualCurrentDate: null,
+    tvResolution: '1920x1080',
   });
 
   const loadSettings = async () => {
@@ -104,6 +105,17 @@ function SettingsForm({ settings, onSave }) {
           <span className="mb-1 block text-slate-300">Manuelles Datum (Debug)</span>
           <input type="date" value={form.manualCurrentDate || ''} onChange={(e) => setForm((prev) => ({ ...prev, manualCurrentDate: e.target.value || null }))} className="w-full rounded-md border border-slate-700 bg-slate-950 px-3 py-2" />
         </label>
+        <label className="text-sm">
+          <span className="mb-1 block text-slate-300">TV-Auflösung</span>
+          <select value={form.tvResolution} onChange={(e) => setForm((prev) => ({ ...prev, tvResolution: e.target.value }))} className="w-full rounded-md border border-slate-700 bg-slate-950 px-3 py-2">
+            <option value="1280x720">HD (1280×720)</option>
+            <option value="1366x768">WXGA (1366×768)</option>
+            <option value="1600x900">HD+ (1600×900)</option>
+            <option value="1920x1080">Full HD (1920×1080)</option>
+            <option value="2560x1440">QHD (2560×1440)</option>
+            <option value="3840x2160">4K UHD (3840×2160)</option>
+          </select>
+        </label>
       </div>
       <button type="submit" className="rounded-md bg-cyan-500 px-4 py-2 font-medium text-slate-950 hover:bg-cyan-400">Speichern</button>
     </form>
@@ -112,7 +124,7 @@ function SettingsForm({ settings, onSave }) {
 
 function UserView() {
   const { sites, loading, reload } = useSites();
-  const { settings, saveSettings } = useSettings();
+  const { settings } = useSettings();
   const [selected, setSelected] = useState(null);
 
   const saveSite = async (payload) => {
@@ -147,7 +159,6 @@ function UserView() {
         </div>
       </header>
       <SiteForm selected={selected} onSave={saveSite} onCancel={() => setSelected(null)} />
-      <SettingsForm settings={settings} onSave={saveSettings} />
       {loading ? <p>Lade Baustellen...</p> : <SiteTable sites={sorted} onEdit={setSelected} onDelete={deleteSite} />}
     </div>
   );
@@ -179,8 +190,8 @@ function TvView() {
   }, [pageCount, settings.tvPageSwitchSeconds]);
 
   return (
-    <div className="min-h-screen bg-slate-950 p-8 text-slate-100">
-      <header className="mb-6 flex items-center justify-between">
+    <div className="flex h-screen flex-col overflow-hidden bg-slate-950 p-8 text-slate-100">
+      <header className="mb-6 flex shrink-0 items-center justify-between">
         <div>
           <h1 className="text-4xl font-bold">Baustellen Übersicht</h1>
           <p className="text-slate-400">Live vom lokalen System · Nur Anzeige</p>
@@ -191,7 +202,20 @@ function TvView() {
           <NavLink to="/" className="rounded-md border border-slate-700 px-4 py-2 text-sm hover:bg-slate-800">Zur Verwaltung</NavLink>
         </div>
       </header>
-      {loading ? <p className="text-xl">Lade Daten...</p> : <GanttChart sites={pagedSites} dense displayMonths={settings.displayMonths} referenceDate={referenceDate} />}
+      <div className="min-h-0 flex-1 overflow-hidden">
+        {loading ? (
+          <p className="text-xl">Lade Daten...</p>
+        ) : (
+          <GanttChart
+            sites={pagedSites}
+            dense
+            displayMonths={settings.displayMonths}
+            referenceDate={referenceDate}
+            tvResolution={settings.tvResolution}
+            tvPageSize={settings.tvPageSize}
+          />
+        )}
+      </div>
     </div>
   );
 }

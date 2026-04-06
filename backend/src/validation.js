@@ -41,4 +41,5 @@ export const settingsSchema = z.object({
   tvPageSize: z.number().int().min(1).max(50),
   tvPageSwitchSeconds: z.number().int().min(10).max(3600),
   manualCurrentDate: z.union([z.string().date(), z.null()]),
+  tvResolution: z.enum(['1280x720', '1366x768', '1600x900', '1920x1080', '2560x1440', '3840x2160']),
 });
