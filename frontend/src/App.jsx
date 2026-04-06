@@ -38,6 +38,10 @@ function useSettings() {
     tvPageSwitchSeconds: 60,
     manualCurrentDate: null,
     tvResolution: '1920x1080',
+    tvTitle: 'Baustellen Übersicht',
+    tvSubtitle: 'Live vom lokalen System · Nur Anzeige',
+    tvShowPageIndicator: true,
+    tvLogoDataUrl: null,
   });
 
   const loadSettings = async () => {
@@ -66,6 +70,7 @@ function useSettings() {
 function SettingsForm({ settings, onSave }) {
   const [form, setForm] = useState(settings);
   const [message, setMessage] = useState('');
+  const [logoError, setLogoError] = useState('');
 
   useEffect(() => {
     setForm(settings);
@@ -82,6 +87,31 @@ function SettingsForm({ settings, onSave }) {
     });
     setMessage('Einstellungen gespeichert.');
     setTimeout(() => setMessage(''), 2500);
+  };
+
+  const handleLogoUpload = (event) => {
+    const [file] = event.target.files || [];
+    if (!file) return;
+
+    if (!file.type.startsWith('image/')) {
+      setLogoError('Bitte eine Bilddatei auswählen.');
+      return;
+    }
+
+    if (file.size > 1024 * 1024) {
+      setLogoError('Das Logo darf maximal 1 MB groß sein.');
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = () => {
+      setForm((prev) => ({ ...prev, tvLogoDataUrl: reader.result }));
+      setLogoError('');
+    };
+    reader.onerror = () => {
+      setLogoError('Logo konnte nicht gelesen werden.');
+    };
+    reader.readAsDataURL(file);
   };
 
   return (
@@ -116,6 +146,31 @@ function SettingsForm({ settings, onSave }) {
             <option value="3840x2160">4K UHD (3840×2160)</option>
           </select>
         </label>
+        <label className="text-sm md:col-span-2">
+          <span className="mb-1 block text-slate-300">Überschrift TV-Ansicht</span>
+          <input type="text" maxLength={120} value={form.tvTitle} onChange={(e) => setForm((prev) => ({ ...prev, tvTitle: e.target.value }))} className="w-full rounded-md border border-slate-700 bg-slate-950 px-3 py-2" />
+        </label>
+        <label className="text-sm md:col-span-2">
+          <span className="mb-1 block text-slate-300">Subtext TV-Ansicht</span>
+          <input type="text" maxLength={240} value={form.tvSubtitle} onChange={(e) => setForm((prev) => ({ ...prev, tvSubtitle: e.target.value }))} className="w-full rounded-md border border-slate-700 bg-slate-950 px-3 py-2" />
+        </label>
+        <label className="flex items-center gap-2 text-sm md:col-span-2">
+          <input type="checkbox" checked={form.tvShowPageIndicator} onChange={(e) => setForm((prev) => ({ ...prev, tvShowPageIndicator: e.target.checked }))} />
+          <span className="text-slate-300">Seitenanzeige (x/x) in der TV-Ansicht anzeigen</span>
+        </label>
+        <div className="space-y-2 text-sm md:col-span-2">
+          <span className="mb-1 block text-slate-300">Logo (oben rechts)</span>
+          <input type="file" accept="image/*" onChange={handleLogoUpload} className="block w-full rounded-md border border-slate-700 bg-slate-950 px-3 py-2" />
+          {logoError && <p className="text-rose-300">{logoError}</p>}
+          {form.tvLogoDataUrl && (
+            <div className="flex items-center gap-4">
+              <img src={form.tvLogoDataUrl} alt="Vorschau Logo" className="h-16 w-auto rounded border border-slate-700 bg-slate-900 p-1" />
+              <button type="button" onClick={() => setForm((prev) => ({ ...prev, tvLogoDataUrl: null }))} className="rounded-md border border-slate-700 px-3 py-2 hover:bg-slate-800">
+                Logo entfernen
+              </button>
+            </div>
+          )}
+        </div>
       </div>
       <button type="submit" className="rounded-md bg-cyan-500 px-4 py-2 font-medium text-slate-950 hover:bg-cyan-400">Speichern</button>
     </form>
@@ -193,14 +248,11 @@ function TvView() {
     <div className="flex h-screen flex-col overflow-hidden bg-slate-950 p-8 text-slate-100">
       <header className="mb-6 flex shrink-0 items-center justify-between">
         <div>
-          <h1 className="text-4xl font-bold">Baustellen Übersicht</h1>
-          <p className="text-slate-400">Live vom lokalen System · Nur Anzeige</p>
-          <p className="text-slate-500">Seite {page + 1} / {pageCount}</p>
+          <h1 className="text-4xl font-bold">{settings.tvTitle}</h1>
+          <p className="text-slate-400">{settings.tvSubtitle}</p>
+          {settings.tvShowPageIndicator && <p className="text-slate-500">Seite {page + 1} / {pageCount}</p>}
         </div>
-        <div className="flex gap-2">
-          <NavLink to="/settings" className="rounded-md border border-slate-700 px-4 py-2 text-sm hover:bg-slate-800">Einstellungen</NavLink>
-          <NavLink to="/" className="rounded-md border border-slate-700 px-4 py-2 text-sm hover:bg-slate-800">Zur Verwaltung</NavLink>
-        </div>
+        {settings.tvLogoDataUrl ? <img src={settings.tvLogoDataUrl} alt="Firmenlogo" className="h-20 w-auto object-contain" /> : null}
       </header>
       <div className="min-h-0 flex-1 overflow-hidden">
         {loading ? (

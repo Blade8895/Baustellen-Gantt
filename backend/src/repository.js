@@ -7,6 +7,10 @@ const defaultSettings = {
   tvPageSwitchSeconds: 60,
   manualCurrentDate: null,
   tvResolution: '1920x1080',
+  tvTitle: 'Baustellen Übersicht',
+  tvSubtitle: 'Live vom lokalen System · Nur Anzeige',
+  tvShowPageIndicator: true,
+  tvLogoDataUrl: null,
 };
 
 const mapPeriodRow = (row) => ({
@@ -154,6 +158,12 @@ export const getSettings = () => {
     tvPageSwitchSeconds: row.tv_page_switch_seconds,
     manualCurrentDate: row.manual_current_date,
     tvResolution: row.tv_resolution || '1920x1080',
+    tvTitle: row.tv_title || defaultSettings.tvTitle,
+    tvSubtitle: row.tv_subtitle ?? defaultSettings.tvSubtitle,
+    tvShowPageIndicator: typeof row.tv_show_page_indicator === 'number'
+      ? row.tv_show_page_indicator === 1
+      : defaultSettings.tvShowPageIndicator,
+    tvLogoDataUrl: row.tv_logo_data_url || null,
   };
 };
 
@@ -165,10 +175,17 @@ export const updateSettings = (payload) => {
         tv_page_size=@tvPageSize,
         tv_page_switch_seconds=@tvPageSwitchSeconds,
         manual_current_date=@manualCurrentDate,
-        tv_resolution=@tvResolution
+        tv_resolution=@tvResolution,
+        tv_title=@tvTitle,
+        tv_subtitle=@tvSubtitle,
+        tv_show_page_indicator=@tvShowPageIndicator,
+        tv_logo_data_url=@tvLogoDataUrl
     WHERE id = 1
   `);
 
-  stmt.run(merged);
+  stmt.run({
+    ...merged,
+    tvShowPageIndicator: merged.tvShowPageIndicator ? 1 : 0,
+  });
   return getSettings();
 };
