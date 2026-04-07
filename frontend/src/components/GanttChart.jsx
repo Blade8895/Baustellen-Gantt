@@ -26,6 +26,12 @@ const weekRangeLabel = (startDate, endDate) => {
   return `KW${startWeek} - KW${endWeek}`;
 };
 
+const weekDateRangeLabel = (weekStart, chartEnd) => {
+  const calculatedWeekEnd = weekStart.endOf('isoWeek');
+  const weekEnd = calculatedWeekEnd.isAfter(chartEnd, 'day') ? chartEnd : calculatedWeekEnd;
+  return `${weekStart.format('DD.MM.')} bis ${weekEnd.format('DD.MM.')}`;
+};
+
 const parseResolution = (value = '1920x1080') => {
   const [width, height] = value.split('x').map((part) => Number(part));
   if (!width || !height) return { width: 1920, height: 1080 };
@@ -41,7 +47,7 @@ export default function GanttChart({ sites, dense = false, displayMonths = 3, re
   const resolutionScale = Math.min(1, resolution.width / 1920, resolution.height / 1080);
   const densityScale = Math.min(1, 8 / Math.max(8, tvPageSize));
   const scaleFactor = monthScale * resolutionScale * densityScale;
-  const timelineHeaderHeight = Math.max(24, Math.round(30 * scaleFactor));
+  const timelineHeaderHeight = Math.max(42, Math.round(52 * scaleFactor));
   const expectedRows = Math.max(1, Math.max(tvPageSize, sites.length));
   const availableHeight = Math.max(280, resolution.height - 260);
   const adaptiveRowHeight = Math.floor((availableHeight - timelineHeaderHeight - expectedRows * 2) / expectedRows);
@@ -50,16 +56,15 @@ export default function GanttChart({ sites, dense = false, displayMonths = 3, re
   const siteColumnWidth = Math.max(
     140,
     Math.min(
-      Math.round((dense ? 260 : 320) * scaleFactor),
-      Math.round(resolution.width * 0.32),
+      Math.round((dense ? 390 : 480) * scaleFactor),
+      Math.round(resolution.width * 0.48),
     ),
   );
   const visibleTickInterval = displayMonths >= 6 ? 3 : displayMonths >= 4 ? 2 : 1;
 
   return (
-    <div className="h-full overflow-hidden rounded-2xl border border-slate-800 bg-slate-900/70 p-4 shadow-xl">
-      <div className="mb-4 flex shrink-0 items-center justify-between">
-        <h2 className="text-lg font-semibold">Gantt-Übersicht (nächste {displayMonths} Monate)</h2>
+    <div className="h-full overflow-hidden rounded-2xl border border-slate-800 bg-slate-900/70 p-4 font-bold shadow-xl">
+      <div className="mb-4 flex shrink-0 items-center justify-end">
         <span className="text-sm text-slate-400">
           {start.format('DD.MM.YYYY')} – {end.format('DD.MM.YYYY')}
         </span>
@@ -70,7 +75,7 @@ export default function GanttChart({ sites, dense = false, displayMonths = 3, re
           className="grid gap-1.5"
           style={{ gridTemplateColumns: `${siteColumnWidth}px minmax(0, 1fr)` }}
         >
-          <div className="text-xs uppercase tracking-wide text-slate-400">Baustelle</div>
+          <div className="text-base uppercase tracking-wide text-slate-200">Baustelle</div>
           <div className="relative rounded bg-slate-950/50" style={{ height: timelineHeaderHeight }}>
             {ticks.map((tick, index) => {
               const left = `${(tick.diff(start, 'day') / totalDays) * 100}%`;
@@ -78,7 +83,12 @@ export default function GanttChart({ sites, dense = false, displayMonths = 3, re
               return (
                 <div key={tick.toString()} className="absolute inset-y-0" style={{ left }}>
                   <div className="h-full border-l border-slate-700/80" />
-                  {isVisibleTick && <span className="absolute top-0 ml-1 text-[10px] text-slate-400">KW{tick.isoWeek()}</span>}
+                  {isVisibleTick && (
+                    <span className="absolute top-0 ml-1 text-xs leading-tight text-slate-200">
+                      <span className="block">KW{tick.isoWeek()}</span>
+                      <span className="block text-[11px]">{weekDateRangeLabel(tick, end)}</span>
+                    </span>
+                  )}
                 </div>
               );
             })}
@@ -87,13 +97,15 @@ export default function GanttChart({ sites, dense = false, displayMonths = 3, re
           {sites.map((site) => (
             <Fragment key={site.id}>
               <div key={`${site.id}-meta`} className="rounded-lg bg-slate-950/40 p-2">
-                <p className="truncate font-semibold">{site.name}</p>
-                <p className="text-xs text-slate-400">
+                <div className="flex items-start justify-between gap-2">
+                  <p className="truncate">{site.name}</p>
+                  <span className={`inline-flex shrink-0 rounded px-2 py-0.5 text-xs ${statusBadgeClass[site.status]}`}>
+                    {statusLabel[site.status]}
+                  </span>
+                </div>
+                <p className="text-xs font-normal text-slate-400">
                   {site.customer} · {site.location}
                 </p>
-                <span className={`mt-2 inline-flex rounded px-2 py-0.5 text-xs ${statusBadgeClass[site.status]}`}>
-                  {statusLabel[site.status]}
-                </span>
               </div>
               <div key={`${site.id}-bar`} className="relative flex items-center rounded-lg bg-slate-950/30" style={{ height: rowHeight }}>
                 {ticks.map((tick) => {
