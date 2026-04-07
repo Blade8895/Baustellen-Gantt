@@ -17,10 +17,12 @@ npm run seed
 ```
 
 ## TV-Darstellung im Vollbild (Chromium-Kiosk)
-Beispiel für Autostart:
+Empfohlenes Autostart-Skript:
 ```bash
-chromium-browser --kiosk --app=http://localhost:5173/tv
+/opt/baustellen-gantt/scripts/start-baustelle.sh
 ```
+
+Das Skript startet erst Backend + Frontend und öffnet Chromium erst, wenn `http://localhost:5173/tv` erreichbar ist.
 
 ## Service-Modus
 ```bash
