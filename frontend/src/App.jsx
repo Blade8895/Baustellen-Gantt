@@ -42,6 +42,17 @@ function useSettings() {
     tvSubtitle: 'Live vom lokalen System · Nur Anzeige',
     tvShowPageIndicator: true,
     tvLogoDataUrl: null,
+    layoutHeaderFontSize: 16,
+    layoutWeekFontSize: 12,
+    layoutWeekDateFontSize: 11,
+    layoutMetaFontSize: 16,
+    layoutPeriodFontSize: 12,
+    layoutSiteColumnMinWidth: 320,
+    layoutTimelineLeadIn: 12,
+    layoutColumnGap: 12,
+    layoutTagGap: 8,
+    layoutRowHeight: 0,
+    layoutBoldText: true,
   });
 
   const loadSettings = async () => {
@@ -84,6 +95,16 @@ function SettingsForm({ settings, onSave }) {
       tvPageSize: Number(form.tvPageSize),
       tvPageSwitchSeconds: Number(form.tvPageSwitchSeconds),
       manualCurrentDate: form.manualCurrentDate || null,
+      layoutHeaderFontSize: Number(form.layoutHeaderFontSize),
+      layoutWeekFontSize: Number(form.layoutWeekFontSize),
+      layoutWeekDateFontSize: Number(form.layoutWeekDateFontSize),
+      layoutMetaFontSize: Number(form.layoutMetaFontSize),
+      layoutPeriodFontSize: Number(form.layoutPeriodFontSize),
+      layoutSiteColumnMinWidth: Number(form.layoutSiteColumnMinWidth),
+      layoutTimelineLeadIn: Number(form.layoutTimelineLeadIn),
+      layoutColumnGap: Number(form.layoutColumnGap),
+      layoutTagGap: Number(form.layoutTagGap),
+      layoutRowHeight: Number(form.layoutRowHeight),
     });
     setMessage('Einstellungen gespeichert.');
     setTimeout(() => setMessage(''), 2500);
@@ -170,6 +191,56 @@ function SettingsForm({ settings, onSave }) {
               </button>
             </div>
           )}
+        </div>
+
+        <div className="rounded-xl border border-slate-700/70 bg-slate-950/40 p-4 md:col-span-2">
+          <h3 className="mb-3 text-base font-semibold text-slate-200">Layout Box</h3>
+          <div className="grid gap-3 md:grid-cols-2">
+            <label className="text-sm">
+              <span className="mb-1 block text-slate-300">Spaltenbreite Baustellen-Spalte (px)</span>
+              <input type="number" min={180} max={900} value={form.layoutSiteColumnMinWidth} onChange={(e) => setForm((prev) => ({ ...prev, layoutSiteColumnMinWidth: e.target.value }))} className="w-full rounded-md border border-slate-700 bg-slate-950 px-3 py-2" />
+            </label>
+            <label className="text-sm">
+              <span className="mb-1 block text-slate-300">Spaltenhöhe / Zeilenhöhe (px, 0 = auto)</span>
+              <input type="number" min={0} max={220} value={form.layoutRowHeight} onChange={(e) => setForm((prev) => ({ ...prev, layoutRowHeight: e.target.value }))} className="w-full rounded-md border border-slate-700 bg-slate-950 px-3 py-2" />
+            </label>
+            <label className="text-sm">
+              <span className="mb-1 block text-slate-300">Pixelabstand Tag bis Timeline (px)</span>
+              <input type="number" min={0} max={80} value={form.layoutTimelineLeadIn} onChange={(e) => setForm((prev) => ({ ...prev, layoutTimelineLeadIn: e.target.value }))} className="w-full rounded-md border border-slate-700 bg-slate-950 px-3 py-2" />
+            </label>
+            <label className="text-sm">
+              <span className="mb-1 block text-slate-300">Spaltenabstand (px)</span>
+              <input type="number" min={0} max={80} value={form.layoutColumnGap} onChange={(e) => setForm((prev) => ({ ...prev, layoutColumnGap: e.target.value }))} className="w-full rounded-md border border-slate-700 bg-slate-950 px-3 py-2" />
+            </label>
+            <label className="text-sm">
+              <span className="mb-1 block text-slate-300">Tag-Abstand in Meta-Zeile (px)</span>
+              <input type="number" min={0} max={40} value={form.layoutTagGap} onChange={(e) => setForm((prev) => ({ ...prev, layoutTagGap: e.target.value }))} className="w-full rounded-md border border-slate-700 bg-slate-950 px-3 py-2" />
+            </label>
+            <label className="text-sm">
+              <span className="mb-1 block text-slate-300">Schriftgröße Header „Baustelle“ (px)</span>
+              <input type="number" min={10} max={40} value={form.layoutHeaderFontSize} onChange={(e) => setForm((prev) => ({ ...prev, layoutHeaderFontSize: e.target.value }))} className="w-full rounded-md border border-slate-700 bg-slate-950 px-3 py-2" />
+            </label>
+            <label className="text-sm">
+              <span className="mb-1 block text-slate-300">Schriftgröße KW (px)</span>
+              <input type="number" min={9} max={28} value={form.layoutWeekFontSize} onChange={(e) => setForm((prev) => ({ ...prev, layoutWeekFontSize: e.target.value }))} className="w-full rounded-md border border-slate-700 bg-slate-950 px-3 py-2" />
+            </label>
+            <label className="text-sm">
+              <span className="mb-1 block text-slate-300">Schriftgröße KW-Datum (px)</span>
+              <input type="number" min={8} max={24} value={form.layoutWeekDateFontSize} onChange={(e) => setForm((prev) => ({ ...prev, layoutWeekDateFontSize: e.target.value }))} className="w-full rounded-md border border-slate-700 bg-slate-950 px-3 py-2" />
+            </label>
+            <label className="text-sm">
+              <span className="mb-1 block text-slate-300">Schriftgröße Baustellenname (px)</span>
+              <input type="number" min={10} max={34} value={form.layoutMetaFontSize} onChange={(e) => setForm((prev) => ({ ...prev, layoutMetaFontSize: e.target.value }))} className="w-full rounded-md border border-slate-700 bg-slate-950 px-3 py-2" />
+            </label>
+            <label className="text-sm">
+              <span className="mb-1 block text-slate-300">Schriftgröße Balken-Text (px)</span>
+              <input type="number" min={9} max={24} value={form.layoutPeriodFontSize} onChange={(e) => setForm((prev) => ({ ...prev, layoutPeriodFontSize: e.target.value }))} className="w-full rounded-md border border-slate-700 bg-slate-950 px-3 py-2" />
+            </label>
+            <label className="flex items-center gap-2 text-sm md:col-span-2">
+              <input type="checkbox" checked={form.layoutBoldText} onChange={(e) => setForm((prev) => ({ ...prev, layoutBoldText: e.target.checked }))} />
+              <span className="text-slate-300">Schriftformatierung fett (Bold)</span>
+            </label>
+          </div>
         </div>
       </div>
       <button type="submit" className="rounded-md bg-cyan-500 px-4 py-2 font-medium text-slate-950 hover:bg-cyan-400">Speichern</button>
@@ -265,6 +336,19 @@ function TvView() {
             referenceDate={referenceDate}
             tvResolution={settings.tvResolution}
             tvPageSize={settings.tvPageSize}
+            layout={{
+              headerFontSize: settings.layoutHeaderFontSize,
+              weekFontSize: settings.layoutWeekFontSize,
+              weekDateFontSize: settings.layoutWeekDateFontSize,
+              metaFontSize: settings.layoutMetaFontSize,
+              periodFontSize: settings.layoutPeriodFontSize,
+              siteColumnMinWidth: settings.layoutSiteColumnMinWidth,
+              timelineLeadIn: settings.layoutTimelineLeadIn,
+              columnGap: settings.layoutColumnGap,
+              tagGap: settings.layoutTagGap,
+              rowHeight: settings.layoutRowHeight || null,
+              boldText: settings.layoutBoldText,
+            }}
           />
         )}
       </div>
