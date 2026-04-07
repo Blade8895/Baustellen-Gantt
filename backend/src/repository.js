@@ -20,6 +20,10 @@ const defaultSettings = {
   layoutTimelineLeadIn: 12,
   layoutColumnGap: 12,
   layoutTagGap: 8,
+  layoutStatusTagFontSize: 12,
+  layoutStatusTagPaddingX: 8,
+  layoutStatusTagPaddingY: 2,
+  layoutStatusTagBorderRadius: 6,
   layoutRowHeight: 0,
   layoutBoldText: true,
 };
@@ -184,6 +188,10 @@ export const getSettings = () => {
     layoutTimelineLeadIn: row.layout_timeline_lead_in ?? defaultSettings.layoutTimelineLeadIn,
     layoutColumnGap: row.layout_column_gap ?? defaultSettings.layoutColumnGap,
     layoutTagGap: row.layout_tag_gap ?? defaultSettings.layoutTagGap,
+    layoutStatusTagFontSize: row.layout_status_tag_font_size ?? defaultSettings.layoutStatusTagFontSize,
+    layoutStatusTagPaddingX: row.layout_status_tag_padding_x ?? defaultSettings.layoutStatusTagPaddingX,
+    layoutStatusTagPaddingY: row.layout_status_tag_padding_y ?? defaultSettings.layoutStatusTagPaddingY,
+    layoutStatusTagBorderRadius: row.layout_status_tag_border_radius ?? defaultSettings.layoutStatusTagBorderRadius,
     layoutRowHeight: row.layout_row_height ?? defaultSettings.layoutRowHeight,
     layoutBoldText: typeof row.layout_bold_text === 'number'
       ? row.layout_bold_text === 1
@@ -213,6 +221,10 @@ export const updateSettings = (payload) => {
         layout_timeline_lead_in=@layoutTimelineLeadIn,
         layout_column_gap=@layoutColumnGap,
         layout_tag_gap=@layoutTagGap,
+        layout_status_tag_font_size=@layoutStatusTagFontSize,
+        layout_status_tag_padding_x=@layoutStatusTagPaddingX,
+        layout_status_tag_padding_y=@layoutStatusTagPaddingY,
+        layout_status_tag_border_radius=@layoutStatusTagBorderRadius,
         layout_row_height=@layoutRowHeight,
         layout_bold_text=@layoutBoldText
     WHERE id = 1

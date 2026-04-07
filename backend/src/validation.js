@@ -55,6 +55,10 @@ export const settingsSchema = z.object({
   layoutTimelineLeadIn: z.number().int().min(0).max(80),
   layoutColumnGap: z.number().int().min(0).max(80),
   layoutTagGap: z.number().int().min(0).max(40),
+  layoutStatusTagFontSize: z.number().int().min(9).max(24),
+  layoutStatusTagPaddingX: z.number().int().min(2).max(20),
+  layoutStatusTagPaddingY: z.number().int().min(0).max(12),
+  layoutStatusTagBorderRadius: z.number().int().min(0).max(30),
   layoutRowHeight: z.number().int().min(0).max(220),
   layoutBoldText: z.boolean(),
 });

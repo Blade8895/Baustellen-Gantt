@@ -51,6 +51,10 @@ function useSettings() {
     layoutTimelineLeadIn: 12,
     layoutColumnGap: 12,
     layoutTagGap: 8,
+    layoutStatusTagFontSize: 12,
+    layoutStatusTagPaddingX: 8,
+    layoutStatusTagPaddingY: 2,
+    layoutStatusTagBorderRadius: 6,
     layoutRowHeight: 0,
     layoutBoldText: true,
   });
@@ -104,6 +108,10 @@ function SettingsForm({ settings, onSave }) {
       layoutTimelineLeadIn: Number(form.layoutTimelineLeadIn),
       layoutColumnGap: Number(form.layoutColumnGap),
       layoutTagGap: Number(form.layoutTagGap),
+      layoutStatusTagFontSize: Number(form.layoutStatusTagFontSize),
+      layoutStatusTagPaddingX: Number(form.layoutStatusTagPaddingX),
+      layoutStatusTagPaddingY: Number(form.layoutStatusTagPaddingY),
+      layoutStatusTagBorderRadius: Number(form.layoutStatusTagBorderRadius),
       layoutRowHeight: Number(form.layoutRowHeight),
     });
     setMessage('Einstellungen gespeichert.');
@@ -215,6 +223,22 @@ function SettingsForm({ settings, onSave }) {
             <label className="text-sm">
               <span className="mb-1 block text-slate-300">Tag-Abstand in Meta-Zeile (px)</span>
               <input type="number" min={0} max={40} value={form.layoutTagGap} onChange={(e) => setForm((prev) => ({ ...prev, layoutTagGap: e.target.value }))} className="w-full rounded-md border border-slate-700 bg-slate-950 px-3 py-2" />
+            </label>
+            <label className="text-sm">
+              <span className="mb-1 block text-slate-300">Tag Schriftgröße Status (px)</span>
+              <input type="number" min={9} max={24} value={form.layoutStatusTagFontSize} onChange={(e) => setForm((prev) => ({ ...prev, layoutStatusTagFontSize: e.target.value }))} className="w-full rounded-md border border-slate-700 bg-slate-950 px-3 py-2" />
+            </label>
+            <label className="text-sm">
+              <span className="mb-1 block text-slate-300">Tag Innenabstand horizontal (px)</span>
+              <input type="number" min={2} max={20} value={form.layoutStatusTagPaddingX} onChange={(e) => setForm((prev) => ({ ...prev, layoutStatusTagPaddingX: e.target.value }))} className="w-full rounded-md border border-slate-700 bg-slate-950 px-3 py-2" />
+            </label>
+            <label className="text-sm">
+              <span className="mb-1 block text-slate-300">Tag Innenabstand vertikal (px)</span>
+              <input type="number" min={0} max={12} value={form.layoutStatusTagPaddingY} onChange={(e) => setForm((prev) => ({ ...prev, layoutStatusTagPaddingY: e.target.value }))} className="w-full rounded-md border border-slate-700 bg-slate-950 px-3 py-2" />
+            </label>
+            <label className="text-sm">
+              <span className="mb-1 block text-slate-300">Tag Rundung (px)</span>
+              <input type="number" min={0} max={30} value={form.layoutStatusTagBorderRadius} onChange={(e) => setForm((prev) => ({ ...prev, layoutStatusTagBorderRadius: e.target.value }))} className="w-full rounded-md border border-slate-700 bg-slate-950 px-3 py-2" />
             </label>
             <label className="text-sm">
               <span className="mb-1 block text-slate-300">Schriftgröße Header „Baustelle“ (px)</span>
@@ -346,6 +370,10 @@ function TvView() {
               timelineLeadIn: settings.layoutTimelineLeadIn,
               columnGap: settings.layoutColumnGap,
               tagGap: settings.layoutTagGap,
+              statusTagFontSize: settings.layoutStatusTagFontSize,
+              statusTagPaddingX: settings.layoutStatusTagPaddingX,
+              statusTagPaddingY: settings.layoutStatusTagPaddingY,
+              statusTagBorderRadius: settings.layoutStatusTagBorderRadius,
               rowHeight: settings.layoutRowHeight || null,
               boldText: settings.layoutBoldText,
             }}

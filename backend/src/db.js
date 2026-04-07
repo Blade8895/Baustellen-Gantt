@@ -58,6 +58,10 @@ db.exec(`
     layout_timeline_lead_in INTEGER NOT NULL DEFAULT 12,
     layout_column_gap INTEGER NOT NULL DEFAULT 12,
     layout_tag_gap INTEGER NOT NULL DEFAULT 8,
+    layout_status_tag_font_size INTEGER NOT NULL DEFAULT 12,
+    layout_status_tag_padding_x INTEGER NOT NULL DEFAULT 8,
+    layout_status_tag_padding_y INTEGER NOT NULL DEFAULT 2,
+    layout_status_tag_border_radius INTEGER NOT NULL DEFAULT 6,
     layout_row_height INTEGER NOT NULL DEFAULT 0,
     layout_bold_text INTEGER NOT NULL DEFAULT 1
   );
@@ -102,6 +106,14 @@ const hasLayoutColumnGap = appSettingsColumns.some((column) => column.name === '
 if (!hasLayoutColumnGap) db.exec('ALTER TABLE app_settings ADD COLUMN layout_column_gap INTEGER NOT NULL DEFAULT 12;');
 const hasLayoutTagGap = appSettingsColumns.some((column) => column.name === 'layout_tag_gap');
 if (!hasLayoutTagGap) db.exec('ALTER TABLE app_settings ADD COLUMN layout_tag_gap INTEGER NOT NULL DEFAULT 8;');
+const hasLayoutStatusTagFontSize = appSettingsColumns.some((column) => column.name === 'layout_status_tag_font_size');
+if (!hasLayoutStatusTagFontSize) db.exec('ALTER TABLE app_settings ADD COLUMN layout_status_tag_font_size INTEGER NOT NULL DEFAULT 12;');
+const hasLayoutStatusTagPaddingX = appSettingsColumns.some((column) => column.name === 'layout_status_tag_padding_x');
+if (!hasLayoutStatusTagPaddingX) db.exec('ALTER TABLE app_settings ADD COLUMN layout_status_tag_padding_x INTEGER NOT NULL DEFAULT 8;');
+const hasLayoutStatusTagPaddingY = appSettingsColumns.some((column) => column.name === 'layout_status_tag_padding_y');
+if (!hasLayoutStatusTagPaddingY) db.exec('ALTER TABLE app_settings ADD COLUMN layout_status_tag_padding_y INTEGER NOT NULL DEFAULT 2;');
+const hasLayoutStatusTagBorderRadius = appSettingsColumns.some((column) => column.name === 'layout_status_tag_border_radius');
+if (!hasLayoutStatusTagBorderRadius) db.exec('ALTER TABLE app_settings ADD COLUMN layout_status_tag_border_radius INTEGER NOT NULL DEFAULT 6;');
 const hasLayoutRowHeight = appSettingsColumns.some((column) => column.name === 'layout_row_height');
 if (!hasLayoutRowHeight) db.exec('ALTER TABLE app_settings ADD COLUMN layout_row_height INTEGER NOT NULL DEFAULT 0;');
 const hasLayoutBoldText = appSettingsColumns.some((column) => column.name === 'layout_bold_text');
@@ -128,10 +140,14 @@ db.prepare(`
     layout_timeline_lead_in,
     layout_column_gap,
     layout_tag_gap,
+    layout_status_tag_font_size,
+    layout_status_tag_padding_x,
+    layout_status_tag_padding_y,
+    layout_status_tag_border_radius,
     layout_row_height,
     layout_bold_text
   )
-  VALUES (1, 3, 8, 60, NULL, '1920x1080', 'Baustellen Übersicht', 'Live vom lokalen System · Nur Anzeige', 1, NULL, 16, 12, 11, 16, 12, 320, 12, 12, 8, 0, 1)
+  VALUES (1, 3, 8, 60, NULL, '1920x1080', 'Baustellen Übersicht', 'Live vom lokalen System · Nur Anzeige', 1, NULL, 16, 12, 11, 16, 12, 320, 12, 12, 8, 12, 8, 2, 6, 0, 1)
   ON CONFLICT(id) DO NOTHING
 `).run();
 
