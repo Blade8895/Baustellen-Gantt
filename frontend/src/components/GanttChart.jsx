@@ -65,6 +65,10 @@ export default function GanttChart({
     timelineLeadIn = 12,
     columnGap = 12,
     tagGap = 8,
+    statusTagFontSize = 12,
+    statusTagPaddingX = 8,
+    statusTagPaddingY = 2,
+    statusTagBorderRadius = 6,
     rowHeight = null,
     boldText = true,
   } = layout;
@@ -124,7 +128,15 @@ export default function GanttChart({
               <div key={`${site.id}-meta`} className="rounded-lg bg-slate-950/40 p-2">
                 <div className="flex items-start justify-between" style={{ gap: `${tagGap}px` }}>
                   <p className="truncate" style={{ fontSize: `${metaFontSize}px` }}>{site.name}</p>
-                  <span className={`inline-flex shrink-0 rounded px-2 py-0.5 text-xs ${statusBadgeClass[site.status]}`}>
+                  <span
+                    className={`inline-flex shrink-0 ${statusBadgeClass[site.status]}`}
+                    style={{
+                      fontSize: `${statusTagFontSize}px`,
+                      paddingInline: `${statusTagPaddingX}px`,
+                      paddingBlock: `${statusTagPaddingY}px`,
+                      borderRadius: `${statusTagBorderRadius}px`,
+                    }}
+                  >
                     {statusLabel[site.status]}
                   </span>
                 </div>
