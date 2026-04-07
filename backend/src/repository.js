@@ -11,6 +11,17 @@ const defaultSettings = {
   tvSubtitle: 'Live vom lokalen System · Nur Anzeige',
   tvShowPageIndicator: true,
   tvLogoDataUrl: null,
+  layoutHeaderFontSize: 16,
+  layoutWeekFontSize: 12,
+  layoutWeekDateFontSize: 11,
+  layoutMetaFontSize: 16,
+  layoutPeriodFontSize: 12,
+  layoutSiteColumnMinWidth: 320,
+  layoutTimelineLeadIn: 12,
+  layoutColumnGap: 12,
+  layoutTagGap: 8,
+  layoutRowHeight: 0,
+  layoutBoldText: true,
 };
 
 const mapPeriodRow = (row) => ({
@@ -164,6 +175,19 @@ export const getSettings = () => {
       ? row.tv_show_page_indicator === 1
       : defaultSettings.tvShowPageIndicator,
     tvLogoDataUrl: row.tv_logo_data_url || null,
+    layoutHeaderFontSize: row.layout_header_font_size ?? defaultSettings.layoutHeaderFontSize,
+    layoutWeekFontSize: row.layout_week_font_size ?? defaultSettings.layoutWeekFontSize,
+    layoutWeekDateFontSize: row.layout_week_date_font_size ?? defaultSettings.layoutWeekDateFontSize,
+    layoutMetaFontSize: row.layout_meta_font_size ?? defaultSettings.layoutMetaFontSize,
+    layoutPeriodFontSize: row.layout_period_font_size ?? defaultSettings.layoutPeriodFontSize,
+    layoutSiteColumnMinWidth: row.layout_site_column_min_width ?? defaultSettings.layoutSiteColumnMinWidth,
+    layoutTimelineLeadIn: row.layout_timeline_lead_in ?? defaultSettings.layoutTimelineLeadIn,
+    layoutColumnGap: row.layout_column_gap ?? defaultSettings.layoutColumnGap,
+    layoutTagGap: row.layout_tag_gap ?? defaultSettings.layoutTagGap,
+    layoutRowHeight: row.layout_row_height ?? defaultSettings.layoutRowHeight,
+    layoutBoldText: typeof row.layout_bold_text === 'number'
+      ? row.layout_bold_text === 1
+      : defaultSettings.layoutBoldText,
   };
 };
 
@@ -179,13 +203,25 @@ export const updateSettings = (payload) => {
         tv_title=@tvTitle,
         tv_subtitle=@tvSubtitle,
         tv_show_page_indicator=@tvShowPageIndicator,
-        tv_logo_data_url=@tvLogoDataUrl
+        tv_logo_data_url=@tvLogoDataUrl,
+        layout_header_font_size=@layoutHeaderFontSize,
+        layout_week_font_size=@layoutWeekFontSize,
+        layout_week_date_font_size=@layoutWeekDateFontSize,
+        layout_meta_font_size=@layoutMetaFontSize,
+        layout_period_font_size=@layoutPeriodFontSize,
+        layout_site_column_min_width=@layoutSiteColumnMinWidth,
+        layout_timeline_lead_in=@layoutTimelineLeadIn,
+        layout_column_gap=@layoutColumnGap,
+        layout_tag_gap=@layoutTagGap,
+        layout_row_height=@layoutRowHeight,
+        layout_bold_text=@layoutBoldText
     WHERE id = 1
   `);
 
   stmt.run({
     ...merged,
     tvShowPageIndicator: merged.tvShowPageIndicator ? 1 : 0,
+    layoutBoldText: merged.layoutBoldText ? 1 : 0,
   });
   return getSettings();
 };

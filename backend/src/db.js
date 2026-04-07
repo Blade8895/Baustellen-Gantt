@@ -48,7 +48,18 @@ db.exec(`
     tv_title TEXT NOT NULL DEFAULT 'Baustellen Übersicht',
     tv_subtitle TEXT NOT NULL DEFAULT 'Live vom lokalen System · Nur Anzeige',
     tv_show_page_indicator INTEGER NOT NULL DEFAULT 1,
-    tv_logo_data_url TEXT
+    tv_logo_data_url TEXT,
+    layout_header_font_size INTEGER NOT NULL DEFAULT 16,
+    layout_week_font_size INTEGER NOT NULL DEFAULT 12,
+    layout_week_date_font_size INTEGER NOT NULL DEFAULT 11,
+    layout_meta_font_size INTEGER NOT NULL DEFAULT 16,
+    layout_period_font_size INTEGER NOT NULL DEFAULT 12,
+    layout_site_column_min_width INTEGER NOT NULL DEFAULT 320,
+    layout_timeline_lead_in INTEGER NOT NULL DEFAULT 12,
+    layout_column_gap INTEGER NOT NULL DEFAULT 12,
+    layout_tag_gap INTEGER NOT NULL DEFAULT 8,
+    layout_row_height INTEGER NOT NULL DEFAULT 0,
+    layout_bold_text INTEGER NOT NULL DEFAULT 1
   );
 `);
 
@@ -73,6 +84,28 @@ const hasTvLogoDataUrl = appSettingsColumns.some((column) => column.name === 'tv
 if (!hasTvLogoDataUrl) {
   db.exec('ALTER TABLE app_settings ADD COLUMN tv_logo_data_url TEXT;');
 }
+const hasLayoutHeaderFontSize = appSettingsColumns.some((column) => column.name === 'layout_header_font_size');
+if (!hasLayoutHeaderFontSize) db.exec('ALTER TABLE app_settings ADD COLUMN layout_header_font_size INTEGER NOT NULL DEFAULT 16;');
+const hasLayoutWeekFontSize = appSettingsColumns.some((column) => column.name === 'layout_week_font_size');
+if (!hasLayoutWeekFontSize) db.exec('ALTER TABLE app_settings ADD COLUMN layout_week_font_size INTEGER NOT NULL DEFAULT 12;');
+const hasLayoutWeekDateFontSize = appSettingsColumns.some((column) => column.name === 'layout_week_date_font_size');
+if (!hasLayoutWeekDateFontSize) db.exec('ALTER TABLE app_settings ADD COLUMN layout_week_date_font_size INTEGER NOT NULL DEFAULT 11;');
+const hasLayoutMetaFontSize = appSettingsColumns.some((column) => column.name === 'layout_meta_font_size');
+if (!hasLayoutMetaFontSize) db.exec('ALTER TABLE app_settings ADD COLUMN layout_meta_font_size INTEGER NOT NULL DEFAULT 16;');
+const hasLayoutPeriodFontSize = appSettingsColumns.some((column) => column.name === 'layout_period_font_size');
+if (!hasLayoutPeriodFontSize) db.exec('ALTER TABLE app_settings ADD COLUMN layout_period_font_size INTEGER NOT NULL DEFAULT 12;');
+const hasLayoutSiteColumnMinWidth = appSettingsColumns.some((column) => column.name === 'layout_site_column_min_width');
+if (!hasLayoutSiteColumnMinWidth) db.exec('ALTER TABLE app_settings ADD COLUMN layout_site_column_min_width INTEGER NOT NULL DEFAULT 320;');
+const hasLayoutTimelineLeadIn = appSettingsColumns.some((column) => column.name === 'layout_timeline_lead_in');
+if (!hasLayoutTimelineLeadIn) db.exec('ALTER TABLE app_settings ADD COLUMN layout_timeline_lead_in INTEGER NOT NULL DEFAULT 12;');
+const hasLayoutColumnGap = appSettingsColumns.some((column) => column.name === 'layout_column_gap');
+if (!hasLayoutColumnGap) db.exec('ALTER TABLE app_settings ADD COLUMN layout_column_gap INTEGER NOT NULL DEFAULT 12;');
+const hasLayoutTagGap = appSettingsColumns.some((column) => column.name === 'layout_tag_gap');
+if (!hasLayoutTagGap) db.exec('ALTER TABLE app_settings ADD COLUMN layout_tag_gap INTEGER NOT NULL DEFAULT 8;');
+const hasLayoutRowHeight = appSettingsColumns.some((column) => column.name === 'layout_row_height');
+if (!hasLayoutRowHeight) db.exec('ALTER TABLE app_settings ADD COLUMN layout_row_height INTEGER NOT NULL DEFAULT 0;');
+const hasLayoutBoldText = appSettingsColumns.some((column) => column.name === 'layout_bold_text');
+if (!hasLayoutBoldText) db.exec('ALTER TABLE app_settings ADD COLUMN layout_bold_text INTEGER NOT NULL DEFAULT 1;');
 
 db.prepare(`
   INSERT INTO app_settings (
@@ -85,9 +118,20 @@ db.prepare(`
     tv_title,
     tv_subtitle,
     tv_show_page_indicator,
-    tv_logo_data_url
+    tv_logo_data_url,
+    layout_header_font_size,
+    layout_week_font_size,
+    layout_week_date_font_size,
+    layout_meta_font_size,
+    layout_period_font_size,
+    layout_site_column_min_width,
+    layout_timeline_lead_in,
+    layout_column_gap,
+    layout_tag_gap,
+    layout_row_height,
+    layout_bold_text
   )
-  VALUES (1, 3, 8, 60, NULL, '1920x1080', 'Baustellen Übersicht', 'Live vom lokalen System · Nur Anzeige', 1, NULL)
+  VALUES (1, 3, 8, 60, NULL, '1920x1080', 'Baustellen Übersicht', 'Live vom lokalen System · Nur Anzeige', 1, NULL, 16, 12, 11, 16, 12, 320, 12, 12, 8, 0, 1)
   ON CONFLICT(id) DO NOTHING
 `).run();
 
