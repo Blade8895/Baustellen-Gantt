@@ -53,8 +53,10 @@ export default function GanttChart({ sites, dense = false, displayMonths = 3, re
   const adaptiveRowHeight = Math.floor((availableHeight - timelineHeaderHeight - expectedRows * 2) / expectedRows);
   const rowHeight = Math.max(34, Math.min(Math.round(64 * scaleFactor), adaptiveRowHeight));
   const periodHeight = Math.max(16, Math.round(rowHeight * 0.55));
+  const timelineLeadIn = 12;
+  const siteColumnMinWidth = dense ? 220 : 320;
   const siteColumnWidth = Math.max(
-    140,
+    siteColumnMinWidth,
     Math.min(
       Math.round((dense ? 390 : 480) * scaleFactor),
       Math.round(resolution.width * 0.48),
@@ -72,26 +74,28 @@ export default function GanttChart({ sites, dense = false, displayMonths = 3, re
 
       <div className="relative h-full overflow-hidden">
         <div
-          className="grid gap-1.5"
+          className="grid gap-x-3 gap-y-1.5"
           style={{ gridTemplateColumns: `${siteColumnWidth}px minmax(0, 1fr)` }}
         >
           <div className="text-base uppercase tracking-wide text-slate-200">Baustelle</div>
           <div className="relative rounded bg-slate-950/50" style={{ height: timelineHeaderHeight }}>
-            {ticks.map((tick, index) => {
-              const left = `${(tick.diff(start, 'day') / totalDays) * 100}%`;
-              const isVisibleTick = index % visibleTickInterval === 0;
-              return (
-                <div key={tick.toString()} className="absolute inset-y-0" style={{ left }}>
-                  <div className="h-full border-l border-slate-700/80" />
-                  {isVisibleTick && (
-                    <span className="absolute top-0 ml-1 text-xs leading-tight text-slate-200">
-                      <span className="block">KW{tick.isoWeek()}</span>
-                      <span className="block text-[11px]">{weekDateRangeLabel(tick, end)}</span>
-                    </span>
-                  )}
-                </div>
-              );
-            })}
+            <div className="relative h-full" style={{ marginLeft: timelineLeadIn, width: `calc(100% - ${timelineLeadIn}px)` }}>
+              {ticks.map((tick, index) => {
+                const left = `${(tick.diff(start, 'day') / totalDays) * 100}%`;
+                const isVisibleTick = index % visibleTickInterval === 0;
+                return (
+                  <div key={tick.toString()} className="absolute inset-y-0" style={{ left }}>
+                    <div className="h-full border-l border-slate-700/80" />
+                    {isVisibleTick && (
+                      <span className="absolute top-0 ml-1 text-xs leading-tight text-slate-200">
+                        <span className="block">KW{tick.isoWeek()}</span>
+                        <span className="block whitespace-nowrap text-[11px]">{weekDateRangeLabel(tick, end)}</span>
+                      </span>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
           </div>
 
           {sites.map((site) => (
@@ -108,27 +112,29 @@ export default function GanttChart({ sites, dense = false, displayMonths = 3, re
                 </p>
               </div>
               <div key={`${site.id}-bar`} className="relative flex items-center rounded-lg bg-slate-950/30" style={{ height: rowHeight }}>
-                {ticks.map((tick) => {
-                  const left = `${(tick.diff(start, 'day') / totalDays) * 100}%`;
-                  return <div key={`${site.id}-tick-${tick.toString()}`} className="absolute inset-y-0 border-l border-slate-800/70" style={{ left }} />;
-                })}
+                <div className="relative h-full" style={{ marginLeft: timelineLeadIn, width: `calc(100% - ${timelineLeadIn}px)` }}>
+                  {ticks.map((tick) => {
+                    const left = `${(tick.diff(start, 'day') / totalDays) * 100}%`;
+                    return <div key={`${site.id}-tick-${tick.toString()}`} className="absolute inset-y-0 border-l border-slate-800/70" style={{ left }} />;
+                  })}
 
-                {(site.periods || []).map((period, index) => {
-                  const { offset, length } = clampDays(period.startDate, period.endDate, start, end);
-                  const left = `${(offset / totalDays) * 100}%`;
-                  const width = `${(length / totalDays) * 100}%`;
+                  {(site.periods || []).map((period, index) => {
+                    const { offset, length } = clampDays(period.startDate, period.endDate, start, end);
+                    const left = `${(offset / totalDays) * 100}%`;
+                    const width = `${(length / totalDays) * 100}%`;
 
-                  return (
-                    <div
-                      key={`${site.id}-period-${index}`}
-                      className="absolute flex items-center rounded-md border border-white/10 px-2 text-xs font-medium text-white shadow-sm"
-                      style={{ height: periodHeight, left, width, backgroundColor: `${site.color}CC` }}
-                      title={`${site.name}: ${dayjs(period.startDate).format('DD.MM.')} - ${dayjs(period.endDate).format('DD.MM.')}`}
-                    >
-                      <span className="truncate">{weekRangeLabel(period.startDate, period.endDate)}</span>
-                    </div>
-                  );
-                })}
+                    return (
+                      <div
+                        key={`${site.id}-period-${index}`}
+                        className="absolute flex items-center rounded-md border border-white/10 px-2 text-xs font-medium text-white shadow-sm"
+                        style={{ height: periodHeight, left, width, backgroundColor: `${site.color}CC` }}
+                        title={`${site.name}: ${dayjs(period.startDate).format('DD.MM.')} - ${dayjs(period.endDate).format('DD.MM.')}`}
+                      >
+                        <span className="truncate">{weekRangeLabel(period.startDate, period.endDate)}</span>
+                      </div>
+                    );
+                  })}
+                </div>
               </div>
             </Fragment>
           ))}

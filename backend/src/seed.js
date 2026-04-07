@@ -10,6 +10,10 @@ const insert = db.prepare(`
   INSERT INTO construction_sites (name, customer, location, start_date, end_date, status, description, color, category)
   VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
 `);
+const insertPeriod = db.prepare(`
+  INSERT INTO site_periods (site_id, start_date, end_date)
+  VALUES (?, ?, ?)
+`);
 
 const today = new Date();
 const formatDate = (date) => date.toISOString().slice(0, 10);
@@ -19,25 +23,58 @@ const addDays = (days) => {
   return formatDate(d);
 };
 
-const demo = [
-  ['Leitungsbau Nordring', 'Stadtwerke A', 'München', addDays(1), addDays(28), 'in_arbeit', 'Straßensperrung Abschnitt 2', '#22d3ee', 'Tiefbau'],
-  ['Brückensanierung B17', 'Landkreis Süd', 'Augsburg', addDays(10), addDays(55), 'geplant', 'Nachtarbeiten in KW 19', '#a78bfa', 'Sanierung'],
-  ['Glasfaser Quartier West', 'NetConnect GmbH', 'Ulm', addDays(5), addDays(75), 'geplant', 'Koordination mit Versorgern notwendig', '#f97316', 'Infrastruktur'],
-  ['Schulhof Modernisierung', 'Stadtbauamt', 'Ingolstadt', addDays(-12), addDays(8), 'in_arbeit', 'Abnahme der Spielgeräte offen', '#34d399', 'Hochbau'],
-  ['Kanalsanierung Innenstadt', 'Stadtentwässerung', 'Regensburg', addDays(12), addDays(68), 'geplant', 'Umleitung über Nordroute abgestimmt', '#38bdf8', 'Sanierung'],
-  ['Neubau Feuerwehrhaus', 'Gemeinde Ost', 'Freising', addDays(20), addDays(120), 'geplant', 'Statikfreigabe noch ausstehend', '#f43f5e', 'Hochbau'],
-  ['Straßenbeleuchtung Süd', 'Kommunalbetrieb', 'Erding', addDays(-6), addDays(24), 'in_arbeit', 'Mastfundamente in 3 Bauabschnitten', '#eab308', 'Infrastruktur'],
-  ['Fernwärme Trasse Nord', 'Wärmeversorgung GmbH', 'Nürnberg', addDays(15), addDays(82), 'geplant', 'Sperrzeitfenster mit ÖPNV abstimmen', '#06b6d4', 'Tiefbau'],
-  ['Parkhaus Deckensanierung', 'CityPark AG', 'Rosenheim', addDays(-20), addDays(18), 'in_arbeit', 'Betoninstandsetzung Ebene 2 läuft', '#818cf8', 'Sanierung'],
-  ['Umgestaltung Marktplatz', 'Stadtverwaltung', 'Landshut', addDays(30), addDays(96), 'geplant', 'Pflasterlieferung bestätigt', '#10b981', 'Städtebau'],
-  ['Kita Erweiterungsbau', 'Sozialreferat', 'Passau', addDays(7), addDays(110), 'geplant', 'Bauantrag genehmigt', '#fb7185', 'Hochbau'],
-  ['Radweg Donauufer', 'Tiefbauamt', 'Deggendorf', addDays(3), addDays(44), 'in_arbeit', 'Asphaltierung in zwei Etappen', '#22c55e', 'Infrastruktur'],
-  ['Gehwegsanierung Bahnhof', 'Stadtwerke Mobilität', 'Kempten', addDays(18), addDays(52), 'geplant', 'Barrierefreie Querungen vorgesehen', '#f59e0b', 'Sanierung'],
-  ['Verkehrsknoten West', 'Landesbetrieb Straßenbau', 'Memmingen', addDays(40), addDays(140), 'geplant', 'Signaltechnik in separater Vergabe', '#0ea5e9', 'Tiefbau'],
-  ['Rathaus Fassadenarbeiten', 'Hochbauamt', 'Bamberg', addDays(-4), addDays(35), 'in_arbeit', 'Gerüstfreigabe erfolgt', '#a855f7', 'Sanierung'],
-  ['Sporthalle Dachabdichtung', 'Schulverband Mitte', 'Coburg', addDays(22), addDays(63), 'geplant', 'Witterungsabhängige Ausführung', '#14b8a6', 'Hochbau']
+const baseProjects = [
+  ['Leitungsbau Nordring', 'Stadtwerke A', 'München', 'Tiefbau'],
+  ['Brückensanierung B17', 'Landkreis Süd', 'Augsburg', 'Sanierung'],
+  ['Glasfaser Quartier West', 'NetConnect GmbH', 'Ulm', 'Infrastruktur'],
+  ['Schulhof Modernisierung', 'Stadtbauamt', 'Ingolstadt', 'Hochbau'],
+  ['Kanalsanierung Innenstadt', 'Stadtentwässerung', 'Regensburg', 'Sanierung'],
+  ['Neubau Feuerwehrhaus', 'Gemeinde Ost', 'Freising', 'Hochbau'],
+  ['Straßenbeleuchtung Süd', 'Kommunalbetrieb', 'Erding', 'Infrastruktur'],
+  ['Fernwärme Trasse Nord', 'Wärmeversorgung GmbH', 'Nürnberg', 'Tiefbau'],
 ];
 
-for (const row of demo) insert.run(...row);
+const colors = ['#22d3ee', '#a78bfa', '#f97316', '#34d399', '#38bdf8', '#f43f5e', '#eab308', '#06b6d4'];
+const descriptions = [
+  'Abstimmung mit Verkehrslenkung',
+  'Materiallieferung in Teilabschnitten',
+  'Sperrpausen mit Anwohnerinfo',
+  'Arbeiten in mehreren Bauphasen',
+];
 
-console.log(`Seed erfolgreich: ${demo.length} Datensätze angelegt.`);
+let count = 0;
+for (let i = 0; i < 32; i += 1) {
+  const [name, customer, location, category] = baseProjects[i % baseProjects.length];
+  const projectName = `${name} ${String.fromCharCode(65 + Math.floor(i / baseProjects.length))}`;
+  const status = i % 6 === 0 ? 'in_arbeit' : 'geplant';
+  const color = colors[i % colors.length];
+  const description = descriptions[i % descriptions.length];
+
+  const phaseStart = -15 + i * 2;
+  const periods = [
+    { startDate: addDays(phaseStart), endDate: addDays(phaseStart + 10) },
+    { startDate: addDays(phaseStart + 16), endDate: addDays(phaseStart + 33) },
+  ];
+  if (i % 3 === 0) {
+    periods.push({ startDate: addDays(phaseStart + 40), endDate: addDays(phaseStart + 54) });
+  }
+
+  const result = insert.run(
+    projectName,
+    customer,
+    location,
+    periods[0].startDate,
+    periods[periods.length - 1].endDate,
+    status,
+    description,
+    color,
+    category,
+  );
+
+  for (const period of periods) {
+    insertPeriod.run(result.lastInsertRowid, period.startDate, period.endDate);
+  }
+  count += 1;
+}
+
+console.log(`Seed erfolgreich: ${count} Datensätze mit mehrteiligen Zeitstrahlen angelegt.`);
