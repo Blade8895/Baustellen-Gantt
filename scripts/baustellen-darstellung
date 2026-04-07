@@ -2,103 +2,43 @@
 set -euo pipefail
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-PID_FILE="$ROOT_DIR/.pids"
 LOG_DIR="$ROOT_DIR/logs"
 
 mkdir -p "$LOG_DIR"
 
-is_running() {
-  local pid="${1:-}"
-  [[ -n "$pid" ]] && kill -0 "$pid" 2>/dev/null
-}
-
-kill_descendants() {
-  local pid="$1"
-  local child
-
-  while read -r child; do
-    [[ -z "$child" ]] && continue
-    kill_descendants "$child"
-    kill -TERM "$child" 2>/dev/null || true
-  done < <(pgrep -P "$pid" || true)
-}
-
-terminate_process_tree() {
-  local pid="${1:-}"
-  [[ -z "$pid" ]] && return 0
-
-  if ! is_running "$pid"; then
-    return 0
-  fi
-
-  # Versucht zuerst die komplette Prozessgruppe sauber zu beenden.
-  kill -TERM -- "-$pid" 2>/dev/null || true
-  kill -TERM "$pid" 2>/dev/null || true
-  kill_descendants "$pid"
-
-  for _ in {1..20}; do
-    if ! is_running "$pid"; then
-      return 0
-    fi
-    sleep 0.2
-  done
-
-  # Falls nötig, hart beenden.
-  kill -KILL -- "-$pid" 2>/dev/null || true
-  kill -KILL "$pid" 2>/dev/null || true
-  kill_descendants "$pid"
+stop_processes() {
+  pkill -f "npm run dev -w backend" 2>/dev/null || true
+  pkill -f "npm run dev -w frontend" 2>/dev/null || true
+  pkill -f "backend/src/server.js" 2>/dev/null || true
+  pkill -f "vite" 2>/dev/null || true
 }
 
 start() {
-  if [[ -f "$PID_FILE" ]]; then
-    echo "System läuft bereits (PID-Datei vorhanden)."
-    status
-    return
-  fi
+  stop_processes
 
-  (cd "$ROOT_DIR" && setsid npm run dev -w backend > "$LOG_DIR/backend.log" 2>&1 < /dev/null & echo $! > "$LOG_DIR/backend.pid")
-  (cd "$ROOT_DIR" && setsid npm run dev -w frontend > "$LOG_DIR/frontend.log" 2>&1 < /dev/null & echo $! > "$LOG_DIR/frontend.pid")
-
-  backend_pid=$(cat "$LOG_DIR/backend.pid")
-  frontend_pid=$(cat "$LOG_DIR/frontend.pid")
-
-  cat > "$PID_FILE" <<EOP
-BACKEND_PID=$backend_pid
-FRONTEND_PID=$frontend_pid
-EOP
+  (cd "$ROOT_DIR" && setsid npm run dev -w backend > "$LOG_DIR/backend.log" 2>&1 < /dev/null &)
+  (cd "$ROOT_DIR" && setsid npm run dev -w frontend > "$LOG_DIR/frontend.log" 2>&1 < /dev/null &)
 
   echo "Baustellen-Darstellung gestartet."
   status
 }
 
 stop() {
-  if [[ ! -f "$PID_FILE" ]]; then
-    echo "Kein laufendes System gefunden."
-    return
-  fi
-
-  source "$PID_FILE"
-  terminate_process_tree "${BACKEND_PID:-}"
-  terminate_process_tree "${FRONTEND_PID:-}"
-  rm -f "$PID_FILE" "$LOG_DIR/backend.pid" "$LOG_DIR/frontend.pid"
+  stop_processes
   echo "Baustellen-Darstellung gestoppt."
 }
 
 status() {
-  if [[ ! -f "$PID_FILE" ]]; then
-    echo "Status: gestoppt"
-    return
-  fi
+  local backend_count frontend_count
+  backend_count=$(pgrep -fc "npm run dev -w backend|backend/src/server.js" || true)
+  frontend_count=$(pgrep -fc "npm run dev -w frontend|vite" || true)
 
-  source "$PID_FILE"
-  if kill -0 "$BACKEND_PID" 2>/dev/null && kill -0 "$FRONTEND_PID" 2>/dev/null; then
+  if [[ "$backend_count" -gt 0 && "$frontend_count" -gt 0 ]]; then
     echo "Status: läuft"
-    echo "Backend PID: $BACKEND_PID"
-    echo "Frontend PID: $FRONTEND_PID"
     echo "User-Ansicht: http://$(hostname -I | awk '{print $1}'):5173"
     echo "TV-Ansicht:   http://$(hostname -I | awk '{print $1}'):5173/tv"
   else
-    echo "Status: inkonsistent (PID-Datei vorhanden, Prozesse fehlen)"
+    echo "Status: gestoppt"
   fi
 }
 
