@@ -42,6 +42,9 @@ function useSettings() {
     tvSubtitle: 'Live vom lokalen System · Nur Anzeige',
     tvShowPageIndicator: true,
     tvLogoDataUrl: null,
+    tvPlaybackPaused: false,
+    tvPinnedPage: null,
+    tvPinnedUntil: null,
     layoutHeaderFontSize: 16,
     layoutWeekFontSize: 12,
     layoutWeekDateFontSize: 11,
@@ -99,6 +102,8 @@ function SettingsForm({ settings, onSave }) {
       tvPageSize: Number(form.tvPageSize),
       tvPageSwitchSeconds: Number(form.tvPageSwitchSeconds),
       manualCurrentDate: form.manualCurrentDate || null,
+      tvPinnedPage: form.tvPinnedPage ? Number(form.tvPinnedPage) : null,
+      tvPinnedUntil: form.tvPinnedUntil || null,
       layoutHeaderFontSize: Number(form.layoutHeaderFontSize),
       layoutWeekFontSize: Number(form.layoutWeekFontSize),
       layoutWeekDateFontSize: Number(form.layoutWeekDateFontSize),
@@ -199,6 +204,24 @@ function SettingsForm({ settings, onSave }) {
               </button>
             </div>
           )}
+        </div>
+
+        <div className="rounded-xl border border-slate-700/70 bg-slate-950/40 p-4 md:col-span-2">
+          <h3 className="mb-3 text-base font-semibold text-slate-200">TV Playback-Steuerung</h3>
+          <div className="grid gap-3 md:grid-cols-2">
+            <label className="flex items-center gap-2 text-sm md:col-span-2">
+              <input type="checkbox" checked={form.tvPlaybackPaused} onChange={(e) => setForm((prev) => ({ ...prev, tvPlaybackPaused: e.target.checked }))} />
+              <span className="text-slate-300">Automatischen Seitenwechsel pausieren</span>
+            </label>
+            <label className="text-sm">
+              <span className="mb-1 block text-slate-300">Fixierte Seite (leer = keine)</span>
+              <input type="number" min={1} max={999} value={form.tvPinnedPage ?? ''} onChange={(e) => setForm((prev) => ({ ...prev, tvPinnedPage: e.target.value || null }))} className="w-full rounded-md border border-slate-700 bg-slate-950 px-3 py-2" />
+            </label>
+            <label className="text-sm">
+              <span className="mb-1 block text-slate-300">Fixiert bis (Datum + Uhrzeit)</span>
+              <input type="datetime-local" value={form.tvPinnedUntil ? dayjs(form.tvPinnedUntil).format('YYYY-MM-DDTHH:mm') : ''} onChange={(e) => setForm((prev) => ({ ...prev, tvPinnedUntil: e.target.value ? dayjs(e.target.value).toISOString() : null }))} className="w-full rounded-md border border-slate-700 bg-slate-950 px-3 py-2" />
+            </label>
+          </div>
         </div>
 
         <div className="rounded-xl border border-slate-700/70 bg-slate-950/40 p-4 md:col-span-2">
@@ -331,23 +354,36 @@ function TvView() {
     setPage((prev) => (prev >= pageCount ? 0 : prev));
   }, [pageCount]);
 
+  const isPinnedActive = Boolean(settings.tvPinnedPage && settings.tvPinnedUntil && dayjs(settings.tvPinnedUntil).isAfter(dayjs()));
+
   useEffect(() => {
+    if (isPinnedActive) {
+      const pinnedPage = Math.min(pageCount, Math.max(1, Number(settings.tvPinnedPage)));
+      setPage(pinnedPage - 1);
+      return undefined;
+    }
+
+    if (settings.tvPlaybackPaused) return undefined;
+
     const interval = window.setInterval(() => {
       setPage((prev) => (prev + 1) % pageCount);
     }, Math.max(10, settings.tvPageSwitchSeconds) * 1000);
 
     return () => window.clearInterval(interval);
-  }, [pageCount, settings.tvPageSwitchSeconds]);
+  }, [isPinnedActive, pageCount, settings.tvPageSwitchSeconds, settings.tvPinnedPage, settings.tvPlaybackPaused]);
 
   return (
     <div className="flex h-screen flex-col overflow-hidden bg-slate-950 p-8 text-slate-100">
-      <header className="mb-6 flex shrink-0 items-center justify-between">
+      <header className="mb-6 flex shrink-0 items-start justify-between gap-4">
         <div>
           <h1 className="text-4xl font-bold">{settings.tvTitle}</h1>
           <p className="text-slate-400">{settings.tvSubtitle}</p>
           {settings.tvShowPageIndicator && <p className="text-slate-500">Seite {page + 1} / {pageCount}</p>}
+          {isPinnedActive ? <p className="mt-1 text-amber-300">Fixierte Seite {settings.tvPinnedPage} bis {dayjs(settings.tvPinnedUntil).format('HH:mm')} Uhr</p> : null}
         </div>
-        {settings.tvLogoDataUrl ? <img src={settings.tvLogoDataUrl} alt="Firmenlogo" className="h-20 w-auto object-contain" /> : null}
+        <div className="flex items-start gap-4">
+          {settings.tvLogoDataUrl ? <img src={settings.tvLogoDataUrl} alt="Firmenlogo" className="h-20 w-auto object-contain" /> : null}
+        </div>
       </header>
       <div className="min-h-0 flex-1 overflow-hidden">
         {loading ? (

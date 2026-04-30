@@ -11,6 +11,9 @@ const defaultSettings = {
   tvSubtitle: 'Live vom lokalen System · Nur Anzeige',
   tvShowPageIndicator: true,
   tvLogoDataUrl: null,
+  tvPlaybackPaused: false,
+  tvPinnedPage: null,
+  tvPinnedUntil: null,
   layoutHeaderFontSize: 16,
   layoutWeekFontSize: 12,
   layoutWeekDateFontSize: 11,
@@ -179,6 +182,9 @@ export const getSettings = () => {
       ? row.tv_show_page_indicator === 1
       : defaultSettings.tvShowPageIndicator,
     tvLogoDataUrl: row.tv_logo_data_url || null,
+    tvPlaybackPaused: typeof row.tv_playback_paused === 'number' ? row.tv_playback_paused === 1 : defaultSettings.tvPlaybackPaused,
+    tvPinnedPage: row.tv_pinned_page ?? defaultSettings.tvPinnedPage,
+    tvPinnedUntil: row.tv_pinned_until ?? defaultSettings.tvPinnedUntil,
     layoutHeaderFontSize: row.layout_header_font_size ?? defaultSettings.layoutHeaderFontSize,
     layoutWeekFontSize: row.layout_week_font_size ?? defaultSettings.layoutWeekFontSize,
     layoutWeekDateFontSize: row.layout_week_date_font_size ?? defaultSettings.layoutWeekDateFontSize,
@@ -212,6 +218,9 @@ export const updateSettings = (payload) => {
         tv_subtitle=@tvSubtitle,
         tv_show_page_indicator=@tvShowPageIndicator,
         tv_logo_data_url=@tvLogoDataUrl,
+        tv_playback_paused=@tvPlaybackPaused,
+        tv_pinned_page=@tvPinnedPage,
+        tv_pinned_until=@tvPinnedUntil,
         layout_header_font_size=@layoutHeaderFontSize,
         layout_week_font_size=@layoutWeekFontSize,
         layout_week_date_font_size=@layoutWeekDateFontSize,
@@ -233,6 +242,7 @@ export const updateSettings = (payload) => {
   stmt.run({
     ...merged,
     tvShowPageIndicator: merged.tvShowPageIndicator ? 1 : 0,
+    tvPlaybackPaused: merged.tvPlaybackPaused ? 1 : 0,
     layoutBoldText: merged.layoutBoldText ? 1 : 0,
   });
   return getSettings();
