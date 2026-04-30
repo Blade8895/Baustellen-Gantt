@@ -49,6 +49,9 @@ db.exec(`
     tv_subtitle TEXT NOT NULL DEFAULT 'Live vom lokalen System · Nur Anzeige',
     tv_show_page_indicator INTEGER NOT NULL DEFAULT 1,
     tv_logo_data_url TEXT,
+    tv_playback_paused INTEGER NOT NULL DEFAULT 0,
+    tv_pinned_page INTEGER,
+    tv_pinned_until TEXT,
     layout_header_font_size INTEGER NOT NULL DEFAULT 16,
     layout_week_font_size INTEGER NOT NULL DEFAULT 12,
     layout_week_date_font_size INTEGER NOT NULL DEFAULT 11,
@@ -88,6 +91,13 @@ const hasTvLogoDataUrl = appSettingsColumns.some((column) => column.name === 'tv
 if (!hasTvLogoDataUrl) {
   db.exec('ALTER TABLE app_settings ADD COLUMN tv_logo_data_url TEXT;');
 }
+const hasTvPlaybackPaused = appSettingsColumns.some((column) => column.name === 'tv_playback_paused');
+if (!hasTvPlaybackPaused) db.exec('ALTER TABLE app_settings ADD COLUMN tv_playback_paused INTEGER NOT NULL DEFAULT 0;');
+const hasTvPinnedPage = appSettingsColumns.some((column) => column.name === 'tv_pinned_page');
+if (!hasTvPinnedPage) db.exec('ALTER TABLE app_settings ADD COLUMN tv_pinned_page INTEGER;');
+const hasTvPinnedUntil = appSettingsColumns.some((column) => column.name === 'tv_pinned_until');
+if (!hasTvPinnedUntil) db.exec('ALTER TABLE app_settings ADD COLUMN tv_pinned_until TEXT;');
+
 const hasLayoutHeaderFontSize = appSettingsColumns.some((column) => column.name === 'layout_header_font_size');
 if (!hasLayoutHeaderFontSize) db.exec('ALTER TABLE app_settings ADD COLUMN layout_header_font_size INTEGER NOT NULL DEFAULT 16;');
 const hasLayoutWeekFontSize = appSettingsColumns.some((column) => column.name === 'layout_week_font_size');
@@ -131,6 +141,9 @@ db.prepare(`
     tv_subtitle,
     tv_show_page_indicator,
     tv_logo_data_url,
+    tv_playback_paused,
+    tv_pinned_page,
+    tv_pinned_until,
     layout_header_font_size,
     layout_week_font_size,
     layout_week_date_font_size,
@@ -147,7 +160,7 @@ db.prepare(`
     layout_row_height,
     layout_bold_text
   )
-  VALUES (1, 3, 8, 60, NULL, '1920x1080', 'Baustellen Übersicht', 'Live vom lokalen System · Nur Anzeige', 1, NULL, 16, 12, 11, 16, 12, 320, 12, 12, 8, 12, 8, 2, 6, 0, 1)
+  VALUES (1, 3, 8, 60, NULL, '1920x1080', 'Baustellen Übersicht', 'Live vom lokalen System · Nur Anzeige', 1, NULL, 0, NULL, NULL, 16, 12, 11, 16, 12, 320, 12, 12, 8, 12, 8, 2, 6, 0, 1)
   ON CONFLICT(id) DO NOTHING
 `).run();
 
